@@ -296,44 +296,61 @@ export default function FlashcardViewer(props: {
     action?.();
   };
 
-  const shuffleControl = () => (
-    <div class="ml-auto flex shrink-0 items-center gap-1">
+  const headerControls = () => (
+    <div class="ml-auto flex shrink-0 items-center gap-3">
       <button
         type="button"
         class="btn btn-xs btn-outline btn-square"
-        disabled={!props.canShuffle}
-        onClick={(event) => handleControlClick(event, props.onShuffle)}
-        aria-label="Mescola mazzo"
-        title="Mescola mazzo"
-      >
-        <FiShuffle class="h-4 w-4" />
-      </button>
-    </div>
-  );
-
-  const sideControls = () => (
-    <>
-      <button
-        type="button"
-        class="btn btn-md btn-outline btn-circle absolute left-3 top-1/2 z-10 -translate-y-1/2 bg-base-100/90 shadow-md"
         disabled={!props.canGoPrev}
         onClick={(event) => handleControlClick(event, props.onPrev)}
         aria-label="Precedente"
         title="Precedente"
       >
-        <FiChevronLeft class="h-5 w-5" />
+        <FiChevronLeft class="h-4 w-4" />
       </button>
       <button
         type="button"
-        class="btn btn-md btn-outline btn-circle absolute right-3 top-1/2 z-10 -translate-y-1/2 bg-base-100/90 shadow-md"
+        class="btn btn-xs btn-outline btn-square"
         disabled={!props.canGoNext}
         onClick={(event) => handleControlClick(event, props.onNext)}
         aria-label="Successiva"
         title="Successiva"
       >
-        <FiChevronRight class="h-5 w-5" />
+        <FiChevronRight class="h-4 w-4" />
       </button>
-    </>
+    </div>
+  );
+
+  const shuffleControl = () => (
+    <button
+      type="button"
+      class="btn btn-sm btn-outline shrink-0"
+      disabled={!props.canShuffle}
+      onClick={(event) => handleControlClick(event, props.onShuffle)}
+      aria-label="Mescola mazzo"
+      title="Mescola mazzo"
+    >
+      <FiShuffle class="h-4 w-4" />
+      <span>Mescola</span>
+    </button>
+  );
+
+  const cardHeader = (hint: string) => (
+    <div class="flex min-h-7 items-center gap-2">
+      <span class="flex min-w-0 items-center gap-2 text-xs text-base-content/60">
+        {typeIcon() && (
+          <span
+            class="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-base-300 bg-base-200 text-base shadow-sm"
+            title={props.type}
+            aria-label={`Tipologia: ${props.type}`}
+          >
+            {typeIcon()}
+          </span>
+        )}
+        <span class="font-normal text-base-content/50">{hint}</span>
+      </span>
+      {headerControls()}
+    </div>
   );
 
   return (
@@ -346,58 +363,25 @@ export default function FlashcardViewer(props: {
       aria-label="Capovolgi flashcard"
     >
       <div class="relative h-full w-full rounded-2xl border border-base-300 bg-base-100 shadow-md">
-        {sideControls()}
-
         <div
-          class={`absolute inset-0 flex h-full flex-col rounded-2xl p-5 text-left transition-opacity duration-150 md:p-6 ${
+          class={`absolute inset-0 flex h-full flex-col rounded-2xl p-3 text-left transition-opacity duration-150 md:p-4 ${
             props.isFlipped ? "pointer-events-none opacity-0" : "opacity-100"
           }`}
         >
-          <div class="flex min-h-8 items-center gap-2">
-            <span class="flex min-w-0 items-center gap-2 text-xs font-semibold uppercase tracking-wider text-base-content/60">
-              {typeIcon() && (
-                <span
-                  class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-base-300 bg-base-200 text-lg shadow-sm"
-                  title={props.type}
-                  aria-label={`Tipologia: ${props.type}`}
-                >
-                  {typeIcon()}
-                </span>
-              )}
-              <span class="font-normal normal-case tracking-normal text-base-content/50">
-                clicca per retro
-              </span>
-            </span>
-            {shuffleControl()}
-          </div>
-          <div class="mt-3 min-h-0 flex-1 overflow-auto px-10">
+          {cardHeader("clicca per retro")}
+          <div class="mt-2 min-h-0 flex-1 overflow-auto px-0 md:px-1">
             <p class="text-lg font-medium leading-relaxed">{props.front}</p>
           </div>
+          <div class="mt-2 flex justify-end">{shuffleControl()}</div>
         </div>
 
         <div
-          class={`absolute inset-0 flex h-full flex-col rounded-2xl p-5 text-left transition-opacity duration-150 md:p-6 ${
+          class={`absolute inset-0 flex h-full flex-col rounded-2xl p-3 text-left transition-opacity duration-150 md:p-4 ${
             props.isFlipped ? "opacity-100" : "pointer-events-none opacity-0"
           }`}
         >
-          <div class="flex min-h-8 items-center gap-2">
-            <span class="flex min-w-0 items-center gap-2 text-xs font-semibold uppercase tracking-wider text-base-content/60">
-              {typeIcon() && (
-                <span
-                  class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-base-300 bg-base-200 text-lg shadow-sm"
-                  title={props.type}
-                  aria-label={`Tipologia: ${props.type}`}
-                >
-                  {typeIcon()}
-                </span>
-              )}
-              <span class="font-normal normal-case tracking-normal text-base-content/50">
-                clicca per fronte
-              </span>
-            </span>
-            {shuffleControl()}
-          </div>
-          <div class="mt-3 min-h-0 flex-1 overflow-auto px-10">
+          {cardHeader("clicca per fronte")}
+          <div class="mt-2 min-h-0 flex-1 overflow-auto px-0 md:px-1">
             <article
               class="flashcard-markdown text-base leading-relaxed"
               onClick={handleMarkdownClick}
