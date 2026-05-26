@@ -52,6 +52,12 @@ const Toolbar: ParentComponent<{
         return pathname === path || pathname.startsWith(`${path}/`);
     };
 
+    const themeLabel = (theme: AppTheme) => {
+        if (theme === AppTheme.Emerald) return "light";
+        if (theme === AppTheme.Forest) return "dark";
+        return theme;
+    };
+
     return (
         <div class="min-h-screen">
             <header class="navbar fixed top-0 z-50 !h-14 !min-h-14 bg-base-200 py-0 sm:!h-16 sm:!min-h-16">
@@ -61,7 +67,7 @@ const Toolbar: ParentComponent<{
                             {dbTitle()}
                             {dbEmojis() ? ` ${dbEmojis()}` : ""}
                         </span>
-                        <span class="hidden truncate text-xs italic text-base-content/70 sm:block">
+                        <span class="block truncate text-xs italic text-base-content/70">
                             {dbTagline()}
                         </span>
                     </div>
@@ -94,7 +100,7 @@ const Toolbar: ParentComponent<{
                                 Theme
                             </option>
                             <For each={props.themes}>
-                                {(theme) => <option value={theme}>{theme}</option>}
+                                {(theme) => <option value={theme}>{themeLabel(theme)}</option>}
                             </For>
                         </select>
                     )}

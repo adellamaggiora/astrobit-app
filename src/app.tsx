@@ -10,6 +10,8 @@ import { AppTheme } from "./models/app-theme";
 import Toolbar from "./components/Toolbar";
 
 const themes = Object.values(AppTheme);
+const resolveTheme = (theme?: AppTheme) =>
+  theme === AppTheme.Forest ? AppTheme.Forest : AppTheme.Emerald;
 
 export default function App() {
 
@@ -17,8 +19,8 @@ export default function App() {
     on(
       () => store.get.appConfig?.theme,
       (theme: AppTheme) => {
-        if (!theme || typeof document === "undefined") return
-        document.documentElement.setAttribute("data-theme", theme)
+        if (typeof document === "undefined") return
+        document.documentElement.setAttribute("data-theme", resolveTheme(theme))
       }
     )
   )
@@ -33,7 +35,7 @@ export default function App() {
           <Toolbar
             routes={toolbarRoutes()}
             themes={themes}
-            selectedTheme={store.get.appConfig?.theme}
+            selectedTheme={resolveTheme(store.get.appConfig?.theme)}
             onThemeChange={(theme) => store.theme.set(theme)}
           >
             <Suspense>{props.children}</Suspense>

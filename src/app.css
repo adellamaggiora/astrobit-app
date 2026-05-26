@@ -2,7 +2,7 @@
 @import "katex/dist/katex.min.css";
 
 @plugin "daisyui" {
-  themes: all;
+  themes: emerald --default, forest;
 }
 
 html,

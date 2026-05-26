@@ -43,7 +43,12 @@ const notification = {
 }
 
 const theme = {
-    set: (theme: AppTheme) => setStore("appConfig", "theme", theme)
+    set: (theme: AppTheme) =>
+        setStore(
+            "appConfig",
+            "theme",
+            theme === AppTheme.Forest ? AppTheme.Forest : AppTheme.Emerald
+        )
 }
 
 export default {
