@@ -207,6 +207,9 @@ const normalizeBackMarkdown = (input: string): string => {
 
   let normalized = output.join("\n");
 
+  // Remove HTML comments from source content so they never appear in cards.
+  normalized = normalized.replace(/<!--[\s\S]*?-->/g, "");
+
   // Notion sometimes wraps inline math inside backticks: $`...`$.
   normalized = normalized.replace(/\$`([\s\S]*?)`\$/g, (_match, formula: string) => {
     return `$${formula.trim()}$`;
@@ -230,11 +233,26 @@ const normalizeBackMarkdown = (input: string): string => {
 export default function FlashcardViewer(props: {
   front: string;
   back: string | any[];
+  type?: string;
   isFlipped: boolean;
   onFlip: () => void;
   onOpenFlashcard?: (id: string) => void;
 }) {
   configureMarked();
+
+  const typeIcon = createMemo(() => {
+    const type = props.type || "";
+    const matches = type.match(/\p{Extended_Pictographic}/gu) || [];
+    const icon = matches.join("");
+    if (icon) return icon;
+
+    if (/definizione/i.test(type)) return "💡";
+    if (/metodo/i.test(type)) return "🧩";
+    if (/teoria/i.test(type)) return "📘";
+    if (/concetto/i.test(type)) return "🧠";
+
+    return "";
+  });
 
   const backHtml = createMemo(() => {
     const backAsMarkdown =
@@ -273,9 +291,18 @@ export default function FlashcardViewer(props: {
             props.isFlipped ? "pointer-events-none opacity-0" : "opacity-100"
           }`}
         >
-          <span class="text-xs font-semibold uppercase tracking-wider text-base-content/60">
-            Fronte
-            <span class="ml-2 font-normal normal-case tracking-normal text-base-content/50">
+          <span class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-base-content/60">
+            {/* <span>Fronte</span> */}
+            {typeIcon() && (
+              <span
+                class="inline-flex h-8 w-8 items-center justify-center rounded-full border border-base-300 bg-base-200 text-lg shadow-sm"
+                title={props.type}
+                aria-label={`Tipologia: ${props.type}`}
+              >
+                {typeIcon()}
+              </span>
+            )}
+            <span class="font-normal normal-case tracking-normal text-base-content/50">
               clicca per retro
             </span>
           </span>
@@ -287,9 +314,18 @@ export default function FlashcardViewer(props: {
             props.isFlipped ? "opacity-100" : "pointer-events-none opacity-0"
           }`}
         >
-          <span class="text-xs font-semibold uppercase tracking-wider text-base-content/60">
-            Retro
-            <span class="ml-2 font-normal normal-case tracking-normal text-base-content/50">
+          <span class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-base-content/60">
+            {/* <span>Retro</span> */}
+            {typeIcon() && (
+              <span
+                class="inline-flex h-8 w-8 items-center justify-center rounded-full border border-base-300 bg-base-200 text-lg shadow-sm"
+                title={props.type}
+                aria-label={`Tipologia: ${props.type}`}
+              >
+                {typeIcon()}
+              </span>
+            )}
+            <span class="font-normal normal-case tracking-normal text-base-content/50">
               clicca per fronte
             </span>
           </span>

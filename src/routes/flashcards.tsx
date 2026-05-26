@@ -308,6 +308,7 @@ export default function FlashcardsPage() {
                     <FlashcardViewer
                       front={card()?.name || currentAtom()?.name || ""}
                       back={card()?.content || ""}
+                      type={card()?.type || currentAtom()?.type}
                       isFlipped={isFlipped()}
                       onFlip={() => setIsFlipped((prev) => !prev)}
                       onOpenFlashcard={openFlashcardById}

@@ -50,7 +50,6 @@ const listAllBlockChildren = async (blockId: string): Promise<any[]> => {
 
     for (const block of page.results || []) {
       allBlocks.push(block);
-
       if (block?.has_children) {
         const nestedChildren = await listAllBlockChildren(block.id);
         allBlocks.push(...nestedChildren);
@@ -67,10 +66,16 @@ const listAllBlockChildren = async (blockId: string): Promise<any[]> => {
 const getDb = query(async () => {
   "use server";
   const notion = getNotion();
-  return notion.databases.retrieve({
+  const db: any = await notion.databases.retrieve({
     database_id: getDbId()
   });
-}, "notion-db");
+
+  return {
+    title: db?.title?.map((item: any) => item?.plain_text).join("").trim() || "Astrobit",
+    description:
+      db?.description?.map((item: any) => item?.plain_text).join(" ").trim() || ""
+  };
+}, "notion-db-summary");
 
 const getAtomsDb = query(async () => {
   "use server";
@@ -189,11 +194,12 @@ const getFlashcardById = query(async (id: string) => {
     return null;
   }
 
-  const page: any = await notion.pages.retrieve({
-    page_id: flashcardId
-  });
-
-  const content = await listAllBlockChildren(flashcardId);
+  const [page, content]: any = await Promise.all([
+    notion.pages.retrieve({
+      page_id: flashcardId
+    }),
+    listAllBlockChildren(flashcardId)
+  ]);
 
   return {
     id: page.id,

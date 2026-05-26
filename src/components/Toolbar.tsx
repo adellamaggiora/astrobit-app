@@ -16,19 +16,24 @@ const Toolbar: ParentComponent<{
     const location = useLocation();
 
     const dbTitle = createMemo(() => {
-        const title = (db()?.title || [])
+        const title = db.latest?.title;
+        if (typeof title === "string") return title || "Astrobit";
+
+        return (title || [])
             .map((item: any) => item?.plain_text)
             .join("")
-            .trim();
-        return title || "Astrobit";
+            .trim() || "Astrobit";
     });
 
-    const dbDescription = createMemo(() =>
-        (db()?.description || [])
+    const dbDescription = createMemo(() => {
+        const description = db.latest?.description;
+        if (typeof description === "string") return description;
+
+        return (description || [])
             .map((item: any) => item?.plain_text)
             .join(" ")
-            .trim()
-    );
+            .trim();
+    });
 
     const dbEmojis = createMemo(() => {
         const matches = dbDescription().match(/\p{Extended_Pictographic}/gu) || [];
