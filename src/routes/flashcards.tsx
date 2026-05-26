@@ -1,6 +1,5 @@
 import { createAsync } from "@solidjs/router";
 import { createEffect, createMemo, createSignal, Show } from "solid-js";
-import { FiChevronLeft, FiChevronRight, FiShuffle } from "solid-icons/fi";
 import FlashcardsFilter from "~/components/FlashcardsFilter";
 import FlashcardsList from "~/components/FlashcardsList";
 import FlashcardViewer from "~/components/FlashcardViewer";
@@ -256,42 +255,6 @@ export default function FlashcardsPage() {
                 </div>
               }
             >
-              <div class="flex flex-wrap items-center justify-between gap-2">
-                <button
-                  type="button"
-                  class="btn btn-md md:btn-sm btn-outline btn-square"
-                  disabled={orderedIds().length < 2}
-                  onClick={shuffleList}
-                  aria-label="Mescola mazzo"
-                  title="Mescola mazzo"
-                >
-                  <FiShuffle class="h-5 w-5" />
-                </button>
-
-                <div class="flex items-center gap-3">
-                  <button
-                    type="button"
-                    class="btn btn-md md:btn-sm btn-outline btn-square"
-                    onClick={goPrev}
-                    disabled={!canGoPrev()}
-                    aria-label="Precedente"
-                    title="Precedente"
-                  >
-                    <FiChevronLeft class="h-5 w-5" />
-                  </button>
-                  <button
-                    type="button"
-                    class="btn btn-md md:btn-sm btn-outline btn-square"
-                    onClick={goNext}
-                    disabled={!canGoNext()}
-                    aria-label="Successiva"
-                    title="Successiva"
-                  >
-                    <FiChevronRight class="h-5 w-5" />
-                  </button>
-                </div>
-              </div>
-
               <Show
                 when={flashcardData()}
                 fallback={
@@ -302,15 +265,21 @@ export default function FlashcardsPage() {
               >
                 {(card) => (
                   <div class="space-y-2">
-                    <Show when={isFlashcardLoading()}>
+                    {/* <Show when={isFlashcardLoading()}>
                       <p class="text-xs text-base-content/60">Aggiornamento flashcard...</p>
-                    </Show>
+                    </Show> */}
                     <FlashcardViewer
                       front={card()?.name || currentAtom()?.name || ""}
                       back={card()?.content || ""}
                       type={card()?.type || currentAtom()?.type}
                       isFlipped={isFlipped()}
                       onFlip={() => setIsFlipped((prev) => !prev)}
+                      canGoPrev={canGoPrev()}
+                      canGoNext={canGoNext()}
+                      canShuffle={orderedIds().length > 1}
+                      onPrev={goPrev}
+                      onNext={goNext}
+                      onShuffle={shuffleList}
                       onOpenFlashcard={openFlashcardById}
                     />
                   </div>

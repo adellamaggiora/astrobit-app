@@ -48,7 +48,7 @@ export default function FlashcardsList(props: {
 
   return (
     <div class="rounded-xl border border-base-300 bg-base-100 shadow-sm">
-      <div ref={scrollRef} class="max-h-[32vh] min-h-[180px] overflow-auto p-2">
+      <div ref={scrollRef} class="max-h-[42vh] min-h-[240px] overflow-auto p-2">
         <Show
           when={props.items.length > 0}
           fallback={

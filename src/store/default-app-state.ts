@@ -6,6 +6,6 @@ export const defaultAppState: AppState = {
     notification: { isVisible: false, message: '', type: NotificationType.Info },
     spinner: { isVisible: false, message: '' },
     appConfig: {
-        theme: AppTheme.Dark
+        theme: AppTheme.Emerald
     }
 }
