@@ -1,0 +1,115 @@
+import { createEffect, createSignal, onCleanup, Show } from "solid-js";
+import { FiDownload, FiSmartphone, FiX } from "solid-icons/fi";
+
+type BeforeInstallPromptEvent = Event & {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: "accepted" | "dismissed"; platform: string }>;
+};
+
+const isStandalone = () => {
+  if (typeof window === "undefined") return true;
+  return (
+    window.matchMedia("(display-mode: standalone)").matches ||
+    (window.navigator as Navigator & { standalone?: boolean }).standalone === true
+  );
+};
+
+const isLocalPreview = () => {
+  if (typeof window === "undefined") return true;
+  return ["localhost", "127.0.0.1", "::1"].includes(window.location.hostname);
+};
+
+export default function PwaInstallPrompt() {
+  const [installEvent, setInstallEvent] = createSignal<BeforeInstallPromptEvent | null>(null);
+  const [isVisible, setIsVisible] = createSignal(false);
+  const [isInstalled, setIsInstalled] = createSignal(isStandalone());
+
+  createEffect(() => {
+    if (typeof window === "undefined") return;
+    if (import.meta.env.DEV || isLocalPreview() || isInstalled()) {
+      setIsVisible(false);
+      return;
+    }
+
+    setIsVisible(true);
+
+    const handleBeforeInstall = (event: Event) => {
+      event.preventDefault();
+      setInstallEvent(event as BeforeInstallPromptEvent);
+      setIsVisible(true);
+    };
+
+    const handleInstalled = () => {
+      setIsInstalled(true);
+      setInstallEvent(null);
+      setIsVisible(false);
+    };
+
+    window.addEventListener("beforeinstallprompt", handleBeforeInstall);
+    window.addEventListener("appinstalled", handleInstalled);
+    onCleanup(() => {
+      window.removeEventListener("beforeinstallprompt", handleBeforeInstall);
+      window.removeEventListener("appinstalled", handleInstalled);
+    });
+  });
+
+  const install = async () => {
+    const event = installEvent();
+    if (!event) return;
+
+    await event.prompt();
+    const choice = await event.userChoice;
+    if (choice.outcome === "accepted" || choice.outcome === "dismissed") {
+      setInstallEvent(null);
+      setIsVisible(false);
+    }
+  };
+
+  return (
+    <Show when={isVisible() && !isInstalled()}>
+      <div class="fixed inset-x-0 bottom-0 z-[60] px-3 pb-3 sm:px-4">
+        <div class="mx-auto flex max-w-3xl items-start gap-3 rounded-lg border border-base-300 bg-base-100 p-3 shadow-xl">
+          <div class="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-primary-content">
+            <FiSmartphone class="h-5 w-5" />
+          </div>
+          <div class="min-w-0 flex-1">
+            <p class="text-sm font-semibold">Installa Astrobit sul browser</p>
+            <p class="text-xs leading-relaxed text-base-content/70">
+              Puoi usarla come app: accesso rapido dalla schermata principale e apertura a tutto
+              schermo. Se il pulsante non apre il prompt, usa il menu del browser e scegli
+              "Installa app" o "Aggiungi a schermata Home".
+            </p>
+            <div class="mt-2 flex flex-wrap gap-2">
+              <button
+                type="button"
+                class="btn btn-primary btn-sm gap-2"
+                disabled={!installEvent()}
+                onClick={install}
+                title="Installa app"
+              >
+                <FiDownload class="h-4 w-4" />
+                <span>Installa</span>
+              </button>
+              <button
+                type="button"
+                class="btn btn-ghost btn-sm"
+                onClick={() => setIsVisible(false)}
+              >
+                Dopo
+              </button>
+            </div>
+          </div>
+          <button
+            type="button"
+            class="btn btn-ghost btn-xs btn-square shrink-0"
+            onClick={() => setIsVisible(false)}
+            aria-label="Chiudi messaggio installazione"
+            title="Chiudi"
+          >
+            <FiX class="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+    </Show>
+  );
+}

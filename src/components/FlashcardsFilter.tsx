@@ -9,11 +9,11 @@ export default function FlashcardsFilter(props: {
   onChange: (next: FlashcardsFilterValue) => void;
 }) {
   return (
-    <div class="grid grid-cols-2 gap-2 md:gap-3">
+    <div class="grid grid-cols-1 gap-2 sm:grid-cols-2 md:gap-3">
       <label class="form-control min-w-0">
         <span class="label-text mb-1 text-sm">Tipologia</span>
         <select
-          class="select select-bordered select-sm w-full min-w-0 md:select-md"
+          class="select select-bordered select-sm w-full min-w-0 max-w-full truncate md:select-md"
           value={props.value.type ?? ""}
           onInput={(event) =>
             props.onChange({
@@ -32,7 +32,7 @@ export default function FlashcardsFilter(props: {
       <label class="form-control min-w-0">
         <span class="label-text mb-1 text-sm">Corso</span>
         <select
-          class="select select-bordered select-sm w-full min-w-0 md:select-md"
+          class="select select-bordered select-sm w-full min-w-0 max-w-full truncate md:select-md"
           value={props.value.course ?? ""}
           onInput={(event) =>
             props.onChange({

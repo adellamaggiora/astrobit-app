@@ -1,4 +1,4 @@
-import { createAsync } from "@solidjs/router";
+import { createAsync, useSearchParams } from "@solidjs/router";
 import { createEffect, createMemo, createSignal, Show } from "solid-js";
 import FlashcardsFilter from "~/components/FlashcardsFilter";
 import FlashcardsList from "~/components/FlashcardsList";
@@ -15,6 +15,7 @@ type AtomSummary = {
 };
 
 export default function FlashcardsPage() {
+  const [searchParams] = useSearchParams();
   const atomTypes = createAsync(() => notion.getAtomsDb());
   const courses = createAsync(() => notion.getAtomsCourses());
   const flashcardCache = new Map<string, any>();
@@ -230,6 +231,12 @@ export default function FlashcardsPage() {
 
     selectFlashcard(nextId);
   };
+
+  createEffect(() => {
+    const id = typeof searchParams.card === "string" ? searchParams.card.trim() : "";
+    if (!id) return;
+    openFlashcardById(id);
+  });
 
   return (
     <section class="space-y-5 pb-8">

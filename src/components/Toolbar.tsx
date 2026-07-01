@@ -60,36 +60,37 @@ const Toolbar: ParentComponent<{
 
     return (
         <div class="min-h-screen">
-            <header class="navbar fixed top-0 z-50 !h-14 !min-h-14 bg-base-200 py-0 sm:!h-16 sm:!min-h-16">
-                <div class="flex min-w-0 flex-1 items-center gap-2 px-4">
-                    <div class="mr-2 min-w-0 flex flex-col leading-tight">
-                        <span class="block truncate whitespace-nowrap font-semibold text-base sm:text-lg">
+            <header class="fixed top-0 z-50 w-full border-b border-base-300 bg-base-200/95 backdrop-blur">
+                <div class="mx-auto flex min-h-12 max-w-7xl items-center gap-2 px-3 py-1.5 sm:min-h-14 sm:px-4">
+                    <div class="min-w-0 flex-1 leading-tight sm:max-w-xs">
+                        <span class="block truncate whitespace-nowrap text-sm font-semibold sm:text-base">
                             {dbTitle()}
                             {dbEmojis() ? ` ${dbEmojis()}` : ""}
                         </span>
-                        <span class="block truncate text-xs italic text-base-content/70">
+                        <span class="hidden truncate text-xs italic text-base-content/70 sm:block">
                             {dbTagline()}
                         </span>
                     </div>
-                    <For each={props.routes}>
-                        {(r) => (
-                            <A
-                                href={r.path}
-                                class={`btn btn-sm shrink-0 gap-2 ${isRouteActive(r.path)
-                                    ? "btn-primary text-primary-content"
-                                    : "btn-ghost"
-                                    }`}
-                            >
-                                {r.icon && <r.icon class="w-5 h-5" />}
-                                <span>{r.label}</span>
-                            </A>
-                        )}
-                    </For>
-                </div>
-                <div class="flex shrink-0 items-center gap-2 px-4">
+                    <nav class="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto px-1">
+                        <For each={props.routes}>
+                            {(r) => (
+                                <A
+                                    href={r.path}
+                                    class={`btn btn-xs shrink-0 gap-1.5 sm:btn-sm ${isRouteActive(r.path)
+                                        ? "btn-primary text-primary-content"
+                                        : "btn-ghost"
+                                        }`}
+                                >
+                                    {r.icon && <r.icon class="h-4 w-4 sm:h-5 sm:w-5" />}
+                                    <span>{r.label}</span>
+                                </A>
+                            )}
+                        </For>
+                    </nav>
+                    <div class="flex shrink-0 items-center gap-2">
                     {props.themes && props.themes.length > 0 && (
                         <select
-                            class="select select-sm select-bordered"
+                            class="select select-bordered select-xs sm:select-sm"
                             value={props.selectedTheme ?? ""}
                             onChange={(event) => {
                                 const theme = event.currentTarget.value as AppTheme;
@@ -104,10 +105,11 @@ const Toolbar: ParentComponent<{
                             </For>
                         </select>
                     )}
+                    </div>
                 </div>
             </header>
 
-            <main class="pt-16 container mx-auto px-4">
+            <main class="container mx-auto px-3 pt-14 sm:px-4 sm:pt-16">
                 {props.children}
             </main>
         </div>

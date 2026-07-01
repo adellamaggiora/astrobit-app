@@ -8,6 +8,7 @@ import store from "./store/store";
 import toolbarRoutes from "./toolbar-routes";
 import { AppTheme } from "./models/app-theme";
 import Toolbar from "./components/Toolbar";
+import PwaInstallPrompt from "./components/PwaInstallPrompt";
 
 const themes = Object.values(AppTheme);
 const resolveTheme = (theme?: AppTheme) =>
@@ -31,6 +32,7 @@ export default function App() {
         <div class="min-h-screen w-full">
           <Notifier notification={store.get.notification} onClose={() => store.notification.clear()} />
           <Spinner spinner={store.get.spinner} />
+          <PwaInstallPrompt />
 
           <Toolbar
             routes={toolbarRoutes()}

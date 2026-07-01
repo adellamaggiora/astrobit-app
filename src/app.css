@@ -11,40 +11,60 @@ body {
   margin: 0;
 }
 
-.flashcard-markdown p {
+.notion-markdown p {
   margin: 0.5rem 0;
 }
 
-.flashcard-markdown ul,
-.flashcard-markdown ol {
+.notion-markdown ul,
+.notion-markdown ol {
   margin: 0.5rem 0 0.5rem 1.25rem;
   padding: 0;
 }
 
-.flashcard-markdown li {
+.notion-markdown li {
   margin: 0.25rem 0;
 }
 
-.flashcard-markdown blockquote {
+.notion-markdown blockquote {
   margin: 0.75rem 0;
   border-left: 3px solid rgb(148 163 184 / 50%);
   padding-left: 0.75rem;
 }
 
-.flashcard-markdown a {
+.notion-markdown a {
   text-decoration: underline;
 }
 
-.flashcard-markdown strong {
+.notion-markdown strong {
   font-weight: 700;
 }
 
-.flashcard-markdown em {
+.notion-markdown em {
   font-style: italic;
 }
 
-.flashcard-markdown code {
+.notion-markdown code {
   border-radius: 0.25rem;
   background-color: rgb(148 163 184 / 15%);
   padding: 0.1rem 0.3rem;
+}
+
+.notion-markdown h1,
+.notion-markdown h2,
+.notion-markdown h3 {
+  margin: 1rem 0 0.5rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.notion-markdown h1 {
+  font-size: 1.5rem;
+}
+
+.notion-markdown h2 {
+  font-size: 1.25rem;
+}
+
+.notion-markdown h3 {
+  font-size: 1.1rem;
 }

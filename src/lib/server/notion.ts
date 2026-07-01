@@ -8,6 +8,9 @@ const COURSE_PROPERTY_ID = "emhw";
 
 let notionClient: Client | undefined;
 
+const hasNotionToken = () => !!process.env.NOTION_TOKEN?.trim();
+const hasNotionDatabaseId = () => !!process.env.NOTION_DATABASE_ID?.trim();
+
 const getNotion = () => {
   const token = process.env.NOTION_TOKEN?.trim();
   if (!token) {
@@ -34,6 +37,78 @@ const getPropertyById = (properties: any, id: string) =>
 
 const getTitleProperty = (properties: any) =>
   Object.values<any>(properties || {}).find((property) => property?.type === "title");
+
+const propertyValueToText = (property: any): string => {
+  if (!property) return "";
+
+  if (property.type === "select") return property.select?.name || "";
+  if (property.type === "status") return property.status?.name || "";
+  if (property.type === "multi_select") {
+    return (property.multi_select || []).map((item: any) => item?.name).filter(Boolean).join(", ");
+  }
+  if (property.type === "number") return property.number == null ? "" : String(property.number);
+  if (property.type === "date") {
+    const start = property.date?.start;
+    const end = property.date?.end;
+    return [start, end].filter(Boolean).join(" - ");
+  }
+  if (property.type === "rich_text") {
+    return (property.rich_text || []).map((item: any) => item?.plain_text).join("").trim();
+  }
+  if (property.type === "checkbox") return property.checkbox ? "Si" : "No";
+  if (property.type === "url") return property.url || "";
+  if (property.type === "email") return property.email || "";
+  if (property.type === "phone_number") return property.phone_number || "";
+
+  return "";
+};
+
+const summarizeProperties = (properties: any) =>
+  Object.entries<any>(properties || [])
+    .filter(([, property]) => property?.type !== "title")
+    .map(([name, property]) => ({
+      name,
+      value: propertyValueToText(property)
+    }))
+    .filter((property) => !!property.value);
+
+const mapAtomRow = (row: any) => {
+  const titleProperty = getTitleProperty(row?.properties);
+  const typeProperty = getPropertyById(row?.properties, TYPE_PROPERTY_ID);
+  const courseProperty = getPropertyById(row?.properties, COURSE_PROPERTY_ID);
+
+  return {
+    id: row.id,
+    name: titleProperty?.title?.map((item: any) => item?.plain_text).join("") ?? "",
+    type: typeProperty?.select?.name,
+    courseIds: (courseProperty?.relation || []).map((course: any) => course?.id)
+  };
+};
+
+const listAtomsForCourse = async (courseId: string) => {
+  const notion = getNotion();
+  let hasMore = true;
+  let nextCursor: string | undefined;
+  const results: any[] = [];
+
+  while (hasMore) {
+    const response: any = await notion.dataSources.query({
+      data_source_id: ATOMS_ID,
+      start_cursor: nextCursor,
+      page_size: 100,
+      filter: {
+        property: COURSE_PROPERTY_ID,
+        relation: { contains: courseId }
+      }
+    });
+
+    results.push(...(response.results || []).map(mapAtomRow));
+    hasMore = !!response.has_more;
+    nextCursor = response.next_cursor ?? undefined;
+  }
+
+  return results;
+};
 
 const listAllBlockChildren = async (blockId: string): Promise<any[]> => {
   const notion = getNotion();
@@ -65,6 +140,13 @@ const listAllBlockChildren = async (blockId: string): Promise<any[]> => {
 
 const getDb = query(async () => {
   "use server";
+  if (!hasNotionToken() || !hasNotionDatabaseId()) {
+    return {
+      title: "Astrobit",
+      description: "Configura NOTION_TOKEN e NOTION_DATABASE_ID per caricare i dati"
+    };
+  }
+
   const notion = getNotion();
   const db: any = await notion.databases.retrieve({
     database_id: getDbId()
@@ -79,6 +161,8 @@ const getDb = query(async () => {
 
 const getAtomsDb = query(async () => {
   "use server";
+  if (!hasNotionToken()) return [];
+
   const notion = getNotion();
   return notion.dataSources
     .retrieve({
@@ -91,6 +175,8 @@ const getAtomsDb = query(async () => {
 
 const getAtomsTypes = query(async (type?: string) => {
   "use server";
+  if (!hasNotionToken()) return { results: [] };
+
   const notion = getNotion();
   const selectedType = type?.trim();
 
@@ -109,6 +195,14 @@ const getAtomsTypes = query(async (type?: string) => {
 
 const getAtoms = query(async (type?: string, courseId?: string, cursor?: string) => {
   "use server";
+  if (!hasNotionToken()) {
+    return {
+      hasMore: false,
+      nextCursor: undefined,
+      results: []
+    };
+  }
+
   const notion = getNotion();
   const selectedType = type?.trim();
   const selectedCourseId = courseId?.trim();
@@ -143,23 +237,14 @@ const getAtoms = query(async (type?: string, courseId?: string, cursor?: string)
   return {
     hasMore: !!response.has_more,
     nextCursor: response.next_cursor ?? undefined,
-    results: (response.results || []).map((row: any) => {
-      const titleProperty = getTitleProperty(row?.properties);
-      const typeProperty = getPropertyById(row?.properties, TYPE_PROPERTY_ID);
-      const courseProperty = getPropertyById(row?.properties, COURSE_PROPERTY_ID);
-
-      return {
-        id: row.id,
-        name: titleProperty?.title?.map((item: any) => item?.plain_text).join("") ?? "",
-        type: typeProperty?.select?.name,
-        courseIds: (courseProperty?.relation || []).map((course: any) => course?.id)
-      };
-    })
+    results: (response.results || []).map(mapAtomRow)
   };
 }, "atoms-page");
 
 const getAtomsCourses = query(async () => {
   "use server";
+  if (!hasNotionToken()) return [];
+
   const notion = getNotion();
 
   return notion.dataSources
@@ -185,8 +270,76 @@ const getAtomsCourses = query(async () => {
     );
 }, "atoms-courses");
 
+const getCourses = query(async () => {
+  "use server";
+  if (!hasNotionToken()) return [];
+
+  const notion = getNotion();
+  let hasMore = true;
+  let nextCursor: string | undefined;
+  const courses: any[] = [];
+
+  while (hasMore) {
+    const response: any = await notion.dataSources.query({
+      data_source_id: COURSES_ID,
+      start_cursor: nextCursor,
+      page_size: 100
+    });
+
+    courses.push(
+      ...(response.results || [])
+        .map((row: any) => {
+          const titleProperty = getTitleProperty(row?.properties);
+          const name = titleProperty?.title
+            ?.map((item: any) => item?.plain_text)
+            .join("")
+            .trim();
+
+          return {
+            id: row.id,
+            name,
+            properties: summarizeProperties(row?.properties)
+          };
+        })
+        .filter((course: any) => !!course?.name)
+    );
+
+    hasMore = !!response.has_more;
+    nextCursor = response.next_cursor ?? undefined;
+  }
+
+  return courses;
+}, "courses");
+
+const getCourseById = query(async (id: string) => {
+  "use server";
+  if (!hasNotionToken()) return null;
+
+  const courseId = id?.trim();
+  if (!courseId) return null;
+
+  const notion = getNotion();
+  const [page, content, atoms]: any = await Promise.all([
+    notion.pages.retrieve({
+      page_id: courseId
+    }),
+    listAllBlockChildren(courseId),
+    listAtomsForCourse(courseId)
+  ]);
+
+  return {
+    id: page.id,
+    name: getTitleProperty(page?.properties)?.title?.map((item: any) => item?.plain_text).join("") ?? "",
+    properties: summarizeProperties(page?.properties),
+    content,
+    atoms
+  };
+}, "course-by-id");
+
 const getFlashcardById = query(async (id: string) => {
   "use server";
+  if (!hasNotionToken()) return null;
+
   const notion = getNotion();
   const flashcardId = id?.trim();
 
@@ -219,5 +372,7 @@ export default {
   getAtomsTypes,
   getAtoms,
   getAtomsCourses,
+  getCourses,
+  getCourseById,
   getFlashcardById
 };
