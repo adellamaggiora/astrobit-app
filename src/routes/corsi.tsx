@@ -16,6 +16,7 @@ type CourseAtom = {
 type CourseSection = {
   id: string;
   name: string;
+  relationIds?: string[];
   atoms: CourseAtom[];
 };
 
@@ -180,13 +181,18 @@ export default function CoursesPage() {
   });
 
   const atoms = createMemo<CourseAtom[]>(() => course()?.atoms || []);
-  const sectionSource = createMemo<{ id: string; name: string }[]>(() => course()?.sections || []);
+  const sectionSource = createMemo<{ id: string; name: string; relationIds?: string[] }[]>(
+    () => course()?.sections || []
+  );
+  const resources = createMemo<CourseAtom[]>(() => course()?.resources || []);
 
   const courseSections = createMemo<CourseSection[]>(() => {
     const sectionAtoms = atoms().filter((atom) => !isResourceAtom(atom));
     const used = new Set<string>();
     const sections = sectionSource().map((section) => {
-      const items = sectionAtoms.filter((atom) => atom.relationIds?.includes(section.id));
+      const items = sectionAtoms.filter(
+        (atom) => atom.relationIds?.includes(section.id) || section.relationIds?.includes(atom.id)
+      );
       for (const item of items) used.add(item.id);
       return {
         ...section,
@@ -194,11 +200,15 @@ export default function CoursesPage() {
       };
     });
 
+    if (sections.length > 0) {
+      return sections;
+    }
+
     const unassigned = sectionAtoms.filter((atom) => !used.has(atom.id));
     if (unassigned.length > 0) {
       sections.push({
-        id: "unassigned",
-        name: "Senza sezione",
+        id: "all-atoms",
+        name: "Atomi",
         atoms: sortByName(unassigned)
       });
     }
@@ -206,7 +216,11 @@ export default function CoursesPage() {
     return sections;
   });
 
-  const resourceGroups = createMemo(() => groupByType(atoms().filter(isResourceAtom), "Risorse"));
+  const resourceGroups = createMemo(() => {
+    const viewResources = resources();
+    if (viewResources.length > 0) return groupByType(viewResources, "Risorse");
+    return groupByType(atoms().filter(isResourceAtom), "Risorse");
+  });
   const courseAtomCount = createMemo(() =>
     courseSections().reduce((total, section) => total + section.atoms.length, 0)
   );

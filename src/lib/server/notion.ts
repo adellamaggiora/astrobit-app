@@ -32,6 +32,12 @@ const getDbId = () => {
   return id;
 };
 
+const getOptionalIds = (...keys: string[]) =>
+  keys
+    .flatMap((key) => (process.env[key] || "").split(","))
+    .map((id) => id.trim())
+    .filter(Boolean);
+
 const getPropertyById = (properties: any, id: string) =>
   Object.values<any>(properties || {}).find((property) => property?.id === id);
 
@@ -63,6 +69,12 @@ const propertyValueToText = (property: any): string => {
   return "";
 };
 
+const normalizeKey = (value?: string) =>
+  (value || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+
 const summarizeProperties = (properties: any) =>
   Object.entries<any>(properties || [])
     .filter(([, property]) => property?.type !== "title")
@@ -78,36 +90,181 @@ const getAllRelationIds = (properties: any) =>
     .flatMap((property) => (property?.relation || []).map((item: any) => item?.id))
     .filter(Boolean);
 
+const getTypeText = (properties: any) => {
+  const explicitType = getPropertyById(properties, TYPE_PROPERTY_ID);
+  const explicitTypeValue = propertyValueToText(explicitType);
+  if (explicitTypeValue) return explicitTypeValue;
+
+  const namedType = Object.entries<any>(properties || {}).find(([name, property]) => {
+    const normalizedName = normalizeKey(name);
+    return (
+      ["tipologia", "tipo", "type", "categoria"].some((key) => normalizedName.includes(key)) &&
+      ["select", "status", "multi_select", "rich_text"].includes(property?.type)
+    );
+  });
+
+  const namedTypeValue = namedType ? propertyValueToText(namedType[1]) : "";
+  if (namedTypeValue) return namedTypeValue;
+
+  const firstOptionProperty = Object.values<any>(properties || {}).find((property) =>
+    ["select", "status", "multi_select"].includes(property?.type)
+  );
+
+  return propertyValueToText(firstOptionProperty);
+};
+
 const mapAtomRow = (row: any) => {
   const titleProperty = getTitleProperty(row?.properties);
-  const typeProperty = getPropertyById(row?.properties, TYPE_PROPERTY_ID);
   const courseProperty = getPropertyById(row?.properties, COURSE_PROPERTY_ID);
 
   return {
     id: row.id,
     name: titleProperty?.title?.map((item: any) => item?.plain_text).join("") ?? "",
-    type: typeProperty?.select?.name,
+    type: getTypeText(row?.properties),
     courseIds: (courseProperty?.relation || []).map((course: any) => course?.id),
-    relationIds: getAllRelationIds(row?.properties)
+    relationIds: getAllRelationIds(row?.properties),
+    properties: summarizeProperties(row?.properties)
   };
 };
 
-const extractCourseSections = (blocks: any[] = []) => {
+const mapCourseViewRow = (row: any) => {
+  const titleProperty = getTitleProperty(row?.properties);
+
+  return {
+    id: row.id,
+    name: titleProperty?.title?.map((item: any) => item?.plain_text).join("").trim() ?? "",
+    type: getTypeText(row?.properties),
+    relationIds: getAllRelationIds(row?.properties),
+    properties: summarizeProperties(row?.properties)
+  };
+};
+
+const blockTitle = (block: any) => {
+  const type = block?.type;
+  const payload = type ? block?.[type] : undefined;
+  return (
+    payload?.title ||
+    payload?.caption?.map((item: any) => item?.plain_text).join("") ||
+    payload?.rich_text?.map((item: any) => item?.plain_text).join("") ||
+    ""
+  ).trim();
+};
+
+const extractChildPageSections = (blocks: any[] = []) => {
   const seen = new Set<string>();
-  const sections: { id: string; name: string }[] = [];
+  const sections: { id: string; name: string; relationIds: string[] }[] = [];
 
   for (const block of blocks) {
     if (block?.type !== "child_page") continue;
 
     const id = block.id;
-    const name = block.child_page?.title?.trim();
+    const name = blockTitle(block);
     if (!id || !name || seen.has(id)) continue;
 
     seen.add(id);
-    sections.push({ id, name });
+    sections.push({ id, name, relationIds: [] });
   }
 
   return sections;
+};
+
+const findCourseViewBlocks = (blocks: any[] = [], key: "sections" | "resources") => {
+  const matchers =
+    key === "sections"
+      ? ["sezioni", "section"]
+      : ["risorse", "resources", "materiale", "materiali"];
+
+  return blocks.filter((block) => {
+    if (block?.type !== "child_database") return false;
+    const title = normalizeKey(blockTitle(block));
+    return matchers.some((matcher) => title.includes(matcher));
+  });
+};
+
+const queryAllDataSourceRows = async (dataSourceId: string) => {
+  const notion = getNotion();
+  let hasMore = true;
+  let nextCursor: string | undefined;
+  const rows: any[] = [];
+
+  while (hasMore) {
+    const response: any = await notion.dataSources.query({
+      data_source_id: dataSourceId,
+      start_cursor: nextCursor,
+      page_size: 100
+    });
+
+    rows.push(...(response.results || []));
+    hasMore = !!response.has_more;
+    nextCursor = response.next_cursor ?? undefined;
+  }
+
+  return rows;
+};
+
+const queryRowsFromDatabaseBlock = async (blockId: string) => {
+  const notion = getNotion();
+  const dataSourceIds: string[] = [];
+
+  try {
+    const database: any = await notion.databases.retrieve({ database_id: blockId });
+    dataSourceIds.push(
+      ...(database?.data_sources || []).map((dataSource: any) => dataSource?.id).filter(Boolean)
+    );
+  } catch {
+    // Some Notion blocks can be queried directly as data sources.
+  }
+
+  if (dataSourceIds.length === 0) {
+    dataSourceIds.push(blockId);
+  }
+
+  const rows: any[] = [];
+  for (const dataSourceId of dataSourceIds) {
+    try {
+      rows.push(...(await queryAllDataSourceRows(dataSourceId)));
+    } catch {
+      // Linked database views may not expose their rows through the block id.
+    }
+  }
+
+  return rows;
+};
+
+const queryRowsFromCourseViews = async (
+  blocks: any[],
+  key: "sections" | "resources",
+  courseId: string
+) => {
+  const seen = new Set<string>();
+  const rows: any[] = [];
+  const configuredIds =
+    key === "sections"
+      ? getOptionalIds("NOTION_SECTIONS_ID", "NOTION_SECTIONS_DATABASE_ID")
+      : getOptionalIds("NOTION_RESOURCES_ID", "NOTION_RESOURCES_DATABASE_ID");
+
+  for (const block of findCourseViewBlocks(blocks, key)) {
+    const blockRows = await queryRowsFromDatabaseBlock(block.id);
+    for (const row of blockRows.map(mapCourseViewRow)) {
+      if (!row.id || seen.has(row.id)) continue;
+      seen.add(row.id);
+      rows.push(row);
+    }
+  }
+
+  for (const configuredId of configuredIds) {
+    const configuredRows = await queryRowsFromDatabaseBlock(configuredId);
+    for (const row of configuredRows.map(mapCourseViewRow)) {
+      if (!row.id || seen.has(row.id)) continue;
+      seen.add(row.id);
+      rows.push(row);
+    }
+  }
+
+  const namedRows = rows.filter((row) => !!row.name);
+  const rowsLinkedToCourse = namedRows.filter((row) => row.relationIds?.includes(courseId));
+
+  return rowsLinkedToCourse.length > 0 ? rowsLinkedToCourse : namedRows;
 };
 
 const listAtomsForCourse = async (courseId: string) => {
@@ -352,11 +509,17 @@ const getCourseById = query(async (id: string) => {
     listAtomsForCourse(courseId)
   ]);
 
+  const [sectionRows, resourceRows] = await Promise.all([
+    queryRowsFromCourseViews(content, "sections", courseId),
+    queryRowsFromCourseViews(content, "resources", courseId)
+  ]);
+
   return {
     id: page.id,
     name: getTitleProperty(page?.properties)?.title?.map((item: any) => item?.plain_text).join("") ?? "",
     properties: summarizeProperties(page?.properties),
-    sections: extractCourseSections(content),
+    sections: sectionRows.length > 0 ? sectionRows : extractChildPageSections(content),
+    resources: resourceRows,
     content,
     atoms
   };
@@ -383,7 +546,7 @@ const getFlashcardById = query(async (id: string) => {
   return {
     id: page.id,
     name: getTitleProperty(page?.properties)?.title?.map((item: any) => item?.plain_text).join("") ?? "",
-    type: getPropertyById(page?.properties, TYPE_PROPERTY_ID)?.select?.name,
+    type: getTypeText(page?.properties),
     courses:
       (getPropertyById(page?.properties, COURSE_PROPERTY_ID)?.relation || []).map(
         (course: any) => course?.id
