@@ -5,8 +5,10 @@
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
+  "id": "/",
   "background_color": "#ffffff",
   "theme_color": "#10b981",
+  "prefer_related_applications": false,
   "icons": [
     {
       "src": "/icon-192.png",

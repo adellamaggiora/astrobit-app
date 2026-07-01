@@ -72,6 +72,12 @@ const summarizeProperties = (properties: any) =>
     }))
     .filter((property) => !!property.value);
 
+const getAllRelationIds = (properties: any) =>
+  Object.values<any>(properties || {})
+    .filter((property) => property?.type === "relation")
+    .flatMap((property) => (property?.relation || []).map((item: any) => item?.id))
+    .filter(Boolean);
+
 const mapAtomRow = (row: any) => {
   const titleProperty = getTitleProperty(row?.properties);
   const typeProperty = getPropertyById(row?.properties, TYPE_PROPERTY_ID);
@@ -81,8 +87,27 @@ const mapAtomRow = (row: any) => {
     id: row.id,
     name: titleProperty?.title?.map((item: any) => item?.plain_text).join("") ?? "",
     type: typeProperty?.select?.name,
-    courseIds: (courseProperty?.relation || []).map((course: any) => course?.id)
+    courseIds: (courseProperty?.relation || []).map((course: any) => course?.id),
+    relationIds: getAllRelationIds(row?.properties)
   };
+};
+
+const extractCourseSections = (blocks: any[] = []) => {
+  const seen = new Set<string>();
+  const sections: { id: string; name: string }[] = [];
+
+  for (const block of blocks) {
+    if (block?.type !== "child_page") continue;
+
+    const id = block.id;
+    const name = block.child_page?.title?.trim();
+    if (!id || !name || seen.has(id)) continue;
+
+    seen.add(id);
+    sections.push({ id, name });
+  }
+
+  return sections;
 };
 
 const listAtomsForCourse = async (courseId: string) => {
@@ -331,6 +356,7 @@ const getCourseById = query(async (id: string) => {
     id: page.id,
     name: getTitleProperty(page?.properties)?.title?.map((item: any) => item?.plain_text).join("") ?? "",
     properties: summarizeProperties(page?.properties),
+    sections: extractCourseSections(content),
     content,
     atoms
   };

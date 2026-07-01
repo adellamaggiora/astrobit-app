@@ -1,9 +1,10 @@
 import { createAsync } from "@solidjs/router";
-import { For, ParentComponent, createMemo } from "solid-js";
+import { For, ParentComponent, Show, createMemo, createSignal } from "solid-js";
 import { A, useLocation } from "@solidjs/router";
 import { ToolbarRoute } from "~/models/toolbar-route";
 import { AppTheme } from "~/models/app-theme";
 import notion from "~/lib/server/notion";
+import { FiMenu, FiX } from "solid-icons/fi";
 
 
 const Toolbar: ParentComponent<{
@@ -14,6 +15,7 @@ const Toolbar: ParentComponent<{
 }> = (props) => {
     const db = createAsync(() => notion.getDb());
     const location = useLocation();
+    const [isMenuOpen, setIsMenuOpen] = createSignal(false);
 
     const dbTitle = createMemo(() => {
         const title = db.latest?.title;
@@ -62,7 +64,16 @@ const Toolbar: ParentComponent<{
         <div class="min-h-screen">
             <header class="fixed top-0 z-50 w-full border-b border-base-300 bg-base-200/95 backdrop-blur">
                 <div class="mx-auto flex min-h-12 max-w-7xl items-center gap-2 px-3 py-1.5 sm:min-h-14 sm:px-4">
-                    <div class="min-w-0 flex-1 leading-tight sm:max-w-xs">
+                    <button
+                        type="button"
+                        class="btn btn-ghost btn-sm btn-square shrink-0"
+                        onClick={() => setIsMenuOpen(true)}
+                        aria-label="Apri menu"
+                        title="Menu"
+                    >
+                        <FiMenu class="h-5 w-5" />
+                    </button>
+                    <div class="min-w-0 flex-1 leading-tight">
                         <span class="block truncate whitespace-nowrap text-sm font-semibold sm:text-base">
                             {dbTitle()}
                             {dbEmojis() ? ` ${dbEmojis()}` : ""}
@@ -71,22 +82,6 @@ const Toolbar: ParentComponent<{
                             {dbTagline()}
                         </span>
                     </div>
-                    <nav class="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto px-1">
-                        <For each={props.routes}>
-                            {(r) => (
-                                <A
-                                    href={r.path}
-                                    class={`btn btn-xs shrink-0 gap-1.5 sm:btn-sm ${isRouteActive(r.path)
-                                        ? "btn-primary text-primary-content"
-                                        : "btn-ghost"
-                                        }`}
-                                >
-                                    {r.icon && <r.icon class="h-4 w-4 sm:h-5 sm:w-5" />}
-                                    <span>{r.label}</span>
-                                </A>
-                            )}
-                        </For>
-                    </nav>
                     <div class="flex shrink-0 items-center gap-2">
                     {props.themes && props.themes.length > 0 && (
                         <select
@@ -108,6 +103,53 @@ const Toolbar: ParentComponent<{
                     </div>
                 </div>
             </header>
+
+            <Show when={isMenuOpen()}>
+                <div class="fixed inset-0 z-[70]">
+                    <button
+                        type="button"
+                        class="absolute inset-0 bg-black/40"
+                        onClick={() => setIsMenuOpen(false)}
+                        aria-label="Chiudi menu"
+                    />
+                    <aside class="absolute left-0 top-0 flex h-full w-72 max-w-[86vw] flex-col border-r border-base-300 bg-base-100 shadow-xl">
+                        <div class="flex min-h-14 items-center gap-2 border-b border-base-300 px-4">
+                            <div class="min-w-0 flex-1">
+                                <p class="truncate text-sm font-semibold">{dbTitle()}</p>
+                                <p class="truncate text-xs text-base-content/60">{dbTagline()}</p>
+                            </div>
+                            <button
+                                type="button"
+                                class="btn btn-ghost btn-sm btn-square"
+                                onClick={() => setIsMenuOpen(false)}
+                                aria-label="Chiudi menu"
+                                title="Chiudi"
+                            >
+                                <FiX class="h-5 w-5" />
+                            </button>
+                        </div>
+
+                        <nav class="flex-1 space-y-1 overflow-auto p-3">
+                            <For each={props.routes}>
+                                {(r) => (
+                                    <A
+                                        href={r.path}
+                                        class={`btn w-full justify-start gap-3 ${
+                                            isRouteActive(r.path)
+                                                ? "btn-primary text-primary-content"
+                                                : "btn-ghost"
+                                        }`}
+                                        onClick={() => setIsMenuOpen(false)}
+                                    >
+                                        {r.icon && <r.icon class="h-5 w-5" />}
+                                        <span>{r.label}</span>
+                                    </A>
+                                )}
+                            </For>
+                        </nav>
+                    </aside>
+                </div>
+            </Show>
 
             <main class="container mx-auto px-3 pt-14 sm:px-4 sm:pt-16">
                 {props.children}
