@@ -1,5 +1,5 @@
 import { createAsync } from "@solidjs/router";
-import { createEffect, createMemo, createSignal, For, Show } from "solid-js";
+import { createEffect, createMemo, createResource, createSignal, For, Show } from "solid-js";
 import { FiFileText, FiFolder, FiLock } from "solid-icons/fi";
 import CoursesList from "~/components/CoursesList";
 import NotionMarkdown from "~/components/NotionMarkdown";
@@ -10,6 +10,7 @@ type CourseAtom = {
   id: string;
   name: string;
   type?: string;
+  sectionNames?: string[];
   relationIds?: string[];
 };
 
@@ -53,6 +54,47 @@ const isResourceAtom = (atom: CourseAtom) => {
 
 const sortByName = (items: CourseAtom[]) =>
   [...items].sort((a, b) => (a.name || "").localeCompare(b.name || "", "it"));
+
+const normalizedLabels = (labels: string[] = []) =>
+  labels.map(normalizeText).filter(Boolean);
+
+const atomBelongsToSection = (
+  atom: CourseAtom,
+  section: { id: string; name: string; relationIds?: string[] }
+) => {
+  const sectionNames = normalizedLabels(atom.sectionNames);
+  return (
+    atom.relationIds?.includes(section.id) ||
+    section.relationIds?.includes(atom.id) ||
+    sectionNames.includes(normalizeText(section.name))
+  );
+};
+
+const groupBySectionLabel = (items: CourseAtom[]) => {
+  const groups = new Map<string, CourseAtom[]>();
+  const unassigned: CourseAtom[] = [];
+
+  for (const item of items) {
+    const sectionName = item.sectionNames?.find((name) => !!name.trim())?.trim();
+    if (!sectionName) {
+      unassigned.push(item);
+      continue;
+    }
+
+    groups.set(sectionName, [...(groups.get(sectionName) || []), item]);
+  }
+
+  return {
+    sections: [...groups.entries()]
+      .map(([name, groupItems]) => ({
+        id: `section-${normalizeText(name).replace(/[^a-z0-9]+/g, "-") || name}`,
+        name,
+        atoms: sortByName(groupItems)
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name, "it")),
+    unassigned
+  };
+};
 
 const groupByType = (items: CourseAtom[], fallbackTitle: string): CourseGroup[] => {
   const groups = new Map<string, CourseAtom[]>();
@@ -166,8 +208,8 @@ export default function CoursesPage() {
     return notion.getCourseById(id);
   });
 
-  const selectedFlashcard = createAsync(async () => {
-    const id = selectedAtomId()?.trim();
+  const [selectedFlashcard] = createResource(selectedAtomId, async (selectedId) => {
+    const id = selectedId?.trim();
     if (!id) return null;
     return notion.getFlashcardById(id);
   });
@@ -190,9 +232,7 @@ export default function CoursesPage() {
     const sectionAtoms = atoms().filter((atom) => !isResourceAtom(atom));
     const used = new Set<string>();
     const sections = sectionSource().map((section) => {
-      const items = sectionAtoms.filter(
-        (atom) => atom.relationIds?.includes(section.id) || section.relationIds?.includes(atom.id)
-      );
+      const items = sectionAtoms.filter((atom) => atomBelongsToSection(atom, section));
       for (const item of items) used.add(item.id);
       return {
         ...section,
@@ -200,20 +240,24 @@ export default function CoursesPage() {
       };
     });
 
-    if (sections.length > 0) {
-      return sections;
-    }
-
     const unassigned = sectionAtoms.filter((atom) => !used.has(atom.id));
-    if (unassigned.length > 0) {
-      sections.push({
+    const fallbackGroups = groupBySectionLabel(unassigned);
+    const visibleSections =
+      sections.some((section) => section.atoms.length > 0) || fallbackGroups.sections.length === 0
+        ? sections
+        : [];
+
+    const result = [...visibleSections, ...fallbackGroups.sections];
+
+    if (fallbackGroups.unassigned.length > 0) {
+      result.push({
         id: "all-atoms",
         name: "Atomi",
-        atoms: sortByName(unassigned)
+        atoms: sortByName(fallbackGroups.unassigned)
       });
     }
 
-    return sections;
+    return result;
   });
 
   const resourceGroups = createMemo(() => {
@@ -229,13 +273,19 @@ export default function CoursesPage() {
   );
 
   const selectAtom = (id: string) => {
+    const scrollTop = typeof window === "undefined" ? undefined : window.scrollY;
     setSelectedAtomId((current) => (current === id ? undefined : id));
+
+    if (scrollTop === undefined) return;
+    requestAnimationFrame(() => {
+      window.scrollTo({ top: scrollTop });
+    });
   };
 
   return (
-    <section class="grid grid-cols-1 gap-4 pb-24 lg:grid-cols-[20rem_minmax(0,1fr)]">
-      <aside class="space-y-2">
-        <div class="flex items-center justify-between">
+    <section class="space-y-4 pb-24">
+      <aside class="rounded-lg border border-base-300 bg-base-100 p-4 shadow-sm">
+        <div class="mb-3 flex flex-wrap items-center justify-between gap-3">
           <h1 class="text-xl font-bold">Corsi</h1>
           <span class="badge badge-outline gap-1">
             <FiLock class="h-3.5 w-3.5" />
@@ -312,7 +362,10 @@ export default function CoursesPage() {
                                 selectedId={selectedAtomId()}
                                 onSelect={selectAtom}
                               >
-                                <FlashcardInline card={selectedFlashcard()} />
+                                <FlashcardInline
+                                  card={selectedFlashcard()}
+                                  isLoading={selectedFlashcard.loading}
+                                />
                               </AtomButton>
                             )}
                           </For>
@@ -344,7 +397,10 @@ export default function CoursesPage() {
                               selectedId={selectedAtomId()}
                               onSelect={selectAtom}
                             >
-                              <FlashcardInline card={selectedFlashcard()} />
+                              <FlashcardInline
+                                card={selectedFlashcard()}
+                                isLoading={selectedFlashcard.loading}
+                              />
                             </AtomButton>
                           )}
                         </For>

@@ -13,44 +13,35 @@ export default function CoursesList(props: {
   onSelect: (id: string) => void;
 }) {
   return (
-    <div class="rounded-lg border border-base-300 bg-base-100 shadow-sm">
-      <div class="max-h-[52vh] min-h-[220px] overflow-auto p-2">
-        <Show
-          when={props.items.length > 0}
-          fallback={
-            <div class="rounded-lg border border-dashed border-base-300 bg-base-200/30 p-3 text-sm text-base-content/70">
-              {props.isLoading ? "Caricamento corsi..." : "Nessun corso trovato."}
-            </div>
-          }
+    <Show
+      when={props.items.length > 0}
+      fallback={
+        <div class="rounded-lg border border-dashed border-base-300 bg-base-200/30 p-3 text-sm text-base-content/70">
+          {props.isLoading ? "Caricamento corsi..." : "Nessun corso trovato."}
+        </div>
+      }
+    >
+      <label class="form-control w-full">
+        <span class="label pb-1">
+          <span class="label-text font-medium">Seleziona corso</span>
+        </span>
+        <select
+          class="select select-bordered w-full"
+          value={props.selectedId || ""}
+          onChange={(event) => props.onSelect(event.currentTarget.value)}
         >
-          <div class="overflow-hidden rounded-lg border border-base-300 divide-y divide-base-300">
-            <For each={props.items}>
-              {(item) => (
-                <button
-                  type="button"
-                  class={`w-full px-3 py-3 text-left transition-colors ${
-                    props.selectedId === item.id
-                      ? "bg-primary text-primary-content"
-                      : "bg-base-200/50 hover:bg-base-300/70"
-                  }`}
-                  onClick={() => props.onSelect(item.id)}
-                >
-                  <span class="block break-words text-sm font-semibold leading-snug">
-                    {item.name || "Senza titolo"}
-                  </span>
-                  <Show when={item.properties?.[0]}>
-                    {(property) => (
-                      <span class="mt-1 block truncate text-xs opacity-70">
-                        {property().name}: {property().value}
-                      </span>
-                    )}
-                  </Show>
-                </button>
-              )}
-            </For>
-          </div>
-        </Show>
-      </div>
-    </div>
+          <For each={props.items}>
+            {(item) => (
+              <option value={item.id}>
+                {item.name || "Senza titolo"}
+                <Show when={item.properties?.[0]}>
+                  {(property) => ` - ${property().name}: ${property().value}`}
+                </Show>
+              </option>
+            )}
+          </For>
+        </select>
+      </label>
+    </Show>
   );
 }

@@ -75,6 +75,19 @@ const normalizeKey = (value?: string) =>
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "");
 
+const SECTION_PROPERTY_KEYS = [
+  "sezione",
+  "section",
+  "modulo",
+  "module",
+  "capitolo",
+  "chapter",
+  "unita",
+  "unit",
+  "lezione",
+  "lesson"
+];
+
 const summarizeProperties = (properties: any) =>
   Object.entries<any>(properties || [])
     .filter(([, property]) => property?.type !== "title")
@@ -113,6 +126,26 @@ const getTypeText = (properties: any) => {
   return propertyValueToText(firstOptionProperty);
 };
 
+const splitPropertyLabels = (value: string) =>
+  value
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+
+const getSectionNames = (properties: any) => {
+  const names = Object.entries<any>(properties || {})
+    .filter(([name, property]) => {
+      const normalizedName = normalizeKey(name);
+      return (
+        SECTION_PROPERTY_KEYS.some((key) => normalizedName.includes(key)) &&
+        ["select", "status", "multi_select", "rich_text"].includes(property?.type)
+      );
+    })
+    .flatMap(([, property]) => splitPropertyLabels(propertyValueToText(property)));
+
+  return [...new Set(names)];
+};
+
 const mapAtomRow = (row: any) => {
   const titleProperty = getTitleProperty(row?.properties);
   const courseProperty = getPropertyById(row?.properties, COURSE_PROPERTY_ID);
@@ -121,6 +154,7 @@ const mapAtomRow = (row: any) => {
     id: row.id,
     name: titleProperty?.title?.map((item: any) => item?.plain_text).join("") ?? "",
     type: getTypeText(row?.properties),
+    sectionNames: getSectionNames(row?.properties),
     courseIds: (courseProperty?.relation || []).map((course: any) => course?.id),
     relationIds: getAllRelationIds(row?.properties),
     properties: summarizeProperties(row?.properties)
