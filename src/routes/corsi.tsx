@@ -377,7 +377,7 @@ export default function CoursesPage() {
               </Show>
             </Accordion>
 
-            <Accordion title="Risorse" count={resourceCount()} icon="folder">
+            {/* <Accordion title="Risorse" count={resourceCount()} icon="folder">
               <Show
                 when={resourceGroups().length > 0}
                 fallback={
@@ -409,7 +409,7 @@ export default function CoursesPage() {
                   )}
                 </For>
               </Show>
-            </Accordion>
+            </Accordion> */}
           </article>
         )}
       </Show>

@@ -359,7 +359,7 @@ const getDb = query(async () => {
   if (!hasNotionToken() || !hasNotionDatabaseId()) {
     return {
       title: "Astrobit",
-      description: "Configura NOTION_TOKEN e NOTION_DATABASE_ID per caricare i dati"
+      // description: "Configura NOTION_TOKEN e NOTION_DATABASE_ID per caricare i dati"
     };
   }
 
