@@ -5,6 +5,12 @@ const ATOMS_ID = "2a0752f1-f8bc-8115-9858-000b04b52557";
 const COURSES_ID = "2a0752f1-f8bc-816f-aede-000b42a6a7af";
 const TYPE_PROPERTY_ID = "vIEZ";
 const COURSE_PROPERTY_ID = "emhw";
+const SECTION_ID_ENV_KEYS = ["NOTION_SECTIONS_ID", "NOTION_SECTIONS_DATABASE_ID"];
+const SECTION_PROPERTY_ID_ENV_KEYS = [
+  "NOTION_ATOM_SECTION_PROPERTY_ID",
+  "NOTION_SECTION_PROPERTY_ID",
+  "NOTION_SECTIONS_PROPERTY_ID"
+];
 
 let notionClient: Client | undefined;
 
@@ -88,6 +94,8 @@ const SECTION_PROPERTY_KEYS = [
   "lesson"
 ];
 
+const ORDER_PROPERTY_KEYS = ["ordinamento", "ordine", "order", "sort", "posizione", "position"];
+
 const summarizeProperties = (properties: any) =>
   Object.entries<any>(properties || [])
     .filter(([, property]) => property?.type !== "title")
@@ -102,6 +110,40 @@ const getAllRelationIds = (properties: any) =>
     .filter((property) => property?.type === "relation")
     .flatMap((property) => (property?.relation || []).map((item: any) => item?.id))
     .filter(Boolean);
+
+const getRelationIdsByPropertyIds = (properties: any, propertyIds: Set<string>) =>
+  Object.values<any>(properties || {})
+    .filter((property) => property?.type === "relation" && propertyIds.has(property.id))
+    .flatMap((property) => (property?.relation || []).map((item: any) => item?.id))
+    .filter(Boolean);
+
+const parseOrderValue = (value: string) => {
+  const normalized = value.replace(",", ".").trim();
+  if (!normalized) return undefined;
+
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? parsed : undefined;
+};
+
+const getOrderValue = (properties: any) => {
+  const orderProperty = Object.entries<any>(properties || {}).find(([name, property]) => {
+    const normalizedName = normalizeKey(name);
+    return (
+      ORDER_PROPERTY_KEYS.some((key) => normalizedName.includes(key)) &&
+      ["number", "select", "status", "rich_text", "title"].includes(property?.type)
+    );
+  })?.[1];
+
+  if (!orderProperty) return undefined;
+  if (orderProperty.type === "number") return orderProperty.number ?? undefined;
+  if (orderProperty.type === "title") {
+    return parseOrderValue(
+      orderProperty.title?.map((item: any) => item?.plain_text).join("") ?? ""
+    );
+  }
+
+  return parseOrderValue(propertyValueToText(orderProperty));
+};
 
 const getTypeText = (properties: any) => {
   const explicitType = getPropertyById(properties, TYPE_PROPERTY_ID);
@@ -132,6 +174,23 @@ const splitPropertyLabels = (value: string) =>
     .map((item) => item.trim())
     .filter(Boolean);
 
+const getDatabaseDescription = (db: any) => {
+  const nativeDescription =
+    db?.description?.map((item: any) => item?.plain_text).join(" ").trim() || "";
+  if (nativeDescription) return nativeDescription;
+
+  const descriptionProperty = Object.entries<any>(db?.properties || {}).find(([name, property]) => {
+    const normalizedName = normalizeKey(name);
+    return (
+      ["descrizione", "description", "tagline", "sottotitolo", "subtitle"].some((key) =>
+        normalizedName.includes(key)
+      ) && ["rich_text", "title"].includes(property?.type)
+    );
+  })?.[1];
+
+  return propertyValueToText(descriptionProperty);
+};
+
 const getSectionNames = (properties: any) => {
   const names = Object.entries<any>(properties || {})
     .filter(([name, property]) => {
@@ -146,7 +205,7 @@ const getSectionNames = (properties: any) => {
   return [...new Set(names)];
 };
 
-const mapAtomRow = (row: any) => {
+const mapAtomRow = (row: any, sectionPropertyIds = new Set<string>()) => {
   const titleProperty = getTitleProperty(row?.properties);
   const courseProperty = getPropertyById(row?.properties, COURSE_PROPERTY_ID);
 
@@ -154,7 +213,9 @@ const mapAtomRow = (row: any) => {
     id: row.id,
     name: titleProperty?.title?.map((item: any) => item?.plain_text).join("") ?? "",
     type: getTypeText(row?.properties),
+    order: getOrderValue(row?.properties),
     sectionNames: getSectionNames(row?.properties),
+    sectionIds: getRelationIdsByPropertyIds(row?.properties, sectionPropertyIds),
     courseIds: (courseProperty?.relation || []).map((course: any) => course?.id),
     relationIds: getAllRelationIds(row?.properties),
     properties: summarizeProperties(row?.properties)
@@ -168,6 +229,7 @@ const mapCourseViewRow = (row: any) => {
     id: row.id,
     name: titleProperty?.title?.map((item: any) => item?.plain_text).join("").trim() ?? "",
     type: getTypeText(row?.properties),
+    order: getOrderValue(row?.properties),
     relationIds: getAllRelationIds(row?.properties),
     properties: summarizeProperties(row?.properties)
   };
@@ -236,6 +298,63 @@ const queryAllDataSourceRows = async (dataSourceId: string) => {
   return rows;
 };
 
+const resolveDataSourceIds = async (id: string) => {
+  const notion = getNotion();
+
+  try {
+    await notion.dataSources.retrieve({ data_source_id: id });
+    return [id];
+  } catch {
+    // The configured value may be a database id instead of a data source id.
+  }
+
+  try {
+    const database: any = await notion.databases.retrieve({ database_id: id });
+    return (database?.data_sources || []).map((dataSource: any) => dataSource?.id).filter(Boolean);
+  } catch {
+    return [];
+  }
+};
+
+const getRelationTargetIds = (property: any) =>
+  [property?.relation?.data_source_id, property?.relation?.database_id].filter(Boolean);
+
+let atomSectionPropertyIdsPromise: Promise<Set<string>> | undefined;
+
+const getAtomSectionPropertyIds = async () => {
+  if (!atomSectionPropertyIdsPromise) {
+    atomSectionPropertyIdsPromise = (async () => {
+      const notion = getNotion();
+      const configuredPropertyIds = new Set(getOptionalIds(...SECTION_PROPERTY_ID_ENV_KEYS));
+      const configuredSectionIds = getOptionalIds(...SECTION_ID_ENV_KEYS);
+      const configuredSectionTargetIds = new Set(
+        (await Promise.all(configuredSectionIds.map(resolveDataSourceIds)))
+          .flat()
+          .concat(configuredSectionIds)
+      );
+      const dataSource: any = await notion.dataSources.retrieve({ data_source_id: ATOMS_ID });
+
+      const sectionProperties = Object.values<any>(dataSource?.properties || {}).filter((property) => {
+        if (property?.type !== "relation") return false;
+
+        const normalizedName = normalizeKey(property.name || "");
+        const targetIds = getRelationTargetIds(property);
+
+        return (
+          configuredPropertyIds.has(property.id) ||
+          targetIds.some((targetId) => configuredSectionTargetIds.has(targetId)) ||
+          normalizedName.includes("sezion") ||
+          normalizedName.includes("section")
+        );
+      });
+
+      return new Set(sectionProperties.map((property) => property.id).filter(Boolean));
+    })();
+  }
+
+  return atomSectionPropertyIdsPromise;
+};
+
 const queryRowsFromDatabaseBlock = async (blockId: string) => {
   const notion = getNotion();
   const dataSourceIds: string[] = [];
@@ -274,7 +393,7 @@ const queryRowsFromCourseViews = async (
   const rows: any[] = [];
   const configuredIds =
     key === "sections"
-      ? getOptionalIds("NOTION_SECTIONS_ID", "NOTION_SECTIONS_DATABASE_ID")
+      ? getOptionalIds(...SECTION_ID_ENV_KEYS)
       : getOptionalIds("NOTION_RESOURCES_ID", "NOTION_RESOURCES_DATABASE_ID");
 
   for (const block of findCourseViewBlocks(blocks, key)) {
@@ -301,8 +420,79 @@ const queryRowsFromCourseViews = async (
   return rowsLinkedToCourse.length > 0 ? rowsLinkedToCourse : namedRows;
 };
 
+const compareByOrder = <T extends { name?: string; order?: number }>(a: T, b: T) => {
+  const aOrder = a.order;
+  const bOrder = b.order;
+
+  if (aOrder !== undefined && bOrder !== undefined && aOrder !== bOrder) {
+    return aOrder - bOrder;
+  }
+  if (aOrder !== undefined) return -1;
+  if (bOrder !== undefined) return 1;
+
+  return (a.name || "").localeCompare(b.name || "", "it");
+};
+
+const getAtomSectionIds = (atoms: any[]) =>
+  new Set(
+    atoms
+      .filter((atom) => !isResourceAtomSummary(atom))
+      .flatMap((atom) => atom.sectionIds || [])
+      .filter(Boolean)
+  );
+
+const isResourceAtomSummary = (atom: { type?: string; name?: string }) => {
+  const value = normalizeKey(`${atom.type || ""} ${atom.name || ""}`);
+  return [
+    "appunti",
+    "cheatsheet",
+    "dispensa",
+    "esame",
+    "esercizio",
+    "libro",
+    "prova",
+    "repository",
+    "ricevimento",
+    "sito",
+    "risorsa",
+    "materiale"
+  ].some((pattern) => value.includes(pattern));
+};
+
+const getSectionPage = async (sectionId: string) => {
+  const notion = getNotion();
+
+  try {
+    const page: any = await notion.pages.retrieve({ page_id: sectionId });
+    return mapCourseViewRow(page);
+  } catch {
+    return undefined;
+  }
+};
+
+const getSectionsForAtoms = async (sectionRows: any[], atoms: any[]) => {
+  const sectionIds = getAtomSectionIds(atoms);
+  if (sectionIds.size === 0) return [];
+
+  const rowsById = new Map(sectionRows.filter((row) => row?.id).map((row) => [row.id, row]));
+  const missingIds = [...sectionIds].filter((sectionId) => !rowsById.has(sectionId));
+  const missingRows = await Promise.all(missingIds.map(getSectionPage));
+
+  for (const row of missingRows) {
+    if (row?.id && !rowsById.has(row.id)) {
+      rowsById.set(row.id, row);
+    }
+  }
+
+  return [...sectionIds]
+    .map((sectionId) => rowsById.get(sectionId))
+    .filter((section) => section?.id && section?.name)
+    .sort(compareByOrder);
+};
+
 const listAtomsForCourse = async (courseId: string) => {
   const notion = getNotion();
+  const sectionPropertyIds = await getAtomSectionPropertyIds();
   let hasMore = true;
   let nextCursor: string | undefined;
   const results: any[] = [];
@@ -318,7 +508,7 @@ const listAtomsForCourse = async (courseId: string) => {
       }
     });
 
-    results.push(...(response.results || []).map(mapAtomRow));
+    results.push(...(response.results || []).map((row: any) => mapAtomRow(row, sectionPropertyIds)));
     hasMore = !!response.has_more;
     nextCursor = response.next_cursor ?? undefined;
   }
@@ -370,8 +560,7 @@ const getDb = query(async () => {
 
   return {
     title: db?.title?.map((item: any) => item?.plain_text).join("").trim() || "Astrobit",
-    description:
-      db?.description?.map((item: any) => item?.plain_text).join(" ").trim() || ""
+    description: getDatabaseDescription(db)
   };
 }, "notion-db-summary");
 
@@ -420,6 +609,7 @@ const getAtoms = query(async (type?: string, courseId?: string, cursor?: string)
   }
 
   const notion = getNotion();
+  const sectionPropertyIds = await getAtomSectionPropertyIds();
   const selectedType = type?.trim();
   const selectedCourseId = courseId?.trim();
 
@@ -453,7 +643,7 @@ const getAtoms = query(async (type?: string, courseId?: string, cursor?: string)
   return {
     hasMore: !!response.has_more,
     nextCursor: response.next_cursor ?? undefined,
-    results: (response.results || []).map(mapAtomRow)
+    results: (response.results || []).map((row: any) => mapAtomRow(row, sectionPropertyIds))
   };
 }, "atoms-page");
 
@@ -547,12 +737,13 @@ const getCourseById = query(async (id: string) => {
     queryRowsFromCourseViews(content, "sections", courseId),
     queryRowsFromCourseViews(content, "resources", courseId)
   ]);
+  const sections = await getSectionsForAtoms(sectionRows, atoms);
 
   return {
     id: page.id,
     name: getTitleProperty(page?.properties)?.title?.map((item: any) => item?.plain_text).join("") ?? "",
     properties: summarizeProperties(page?.properties),
-    sections: sectionRows.length > 0 ? sectionRows : extractChildPageSections(content),
+    sections: sections.length > 0 ? sections : extractChildPageSections(content),
     resources: resourceRows,
     content,
     atoms

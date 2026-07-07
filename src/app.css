@@ -5,14 +5,109 @@
   themes: emerald --default, forest;
 }
 
+:root,
+[data-theme="emerald"] {
+  color-scheme: light;
+  --color-base-100: oklch(99% 0.003 106);
+  --color-base-200: oklch(96.5% 0.005 106);
+  --color-base-300: oklch(88% 0.012 95);
+  --color-base-content: oklch(22% 0.02 95);
+  --color-primary: oklch(36% 0.055 265);
+  --color-primary-content: oklch(98% 0.004 106);
+  --color-secondary: oklch(41% 0.05 260);
+  --color-secondary-content: oklch(98% 0.004 106);
+  --color-accent: oklch(49% 0.08 65);
+  --color-accent-content: oklch(98% 0.004 106);
+  --color-neutral: oklch(29% 0.02 95);
+  --color-neutral-content: oklch(98% 0.004 106);
+  --radius-selector: 0.25rem;
+  --radius-field: 0.25rem;
+  --radius-box: 0.25rem;
+  --border: 1px;
+  --depth: 0;
+  --noise: 0;
+}
+
+[data-theme="forest"] {
+  color-scheme: dark;
+  --color-base-100: oklch(18% 0.012 95);
+  --color-base-200: oklch(22% 0.014 95);
+  --color-base-300: oklch(34% 0.018 95);
+  --color-base-content: oklch(92% 0.008 106);
+  --color-primary: oklch(74% 0.045 265);
+  --color-primary-content: oklch(16% 0.012 95);
+  --color-secondary: oklch(74% 0.04 260);
+  --color-secondary-content: oklch(16% 0.012 95);
+  --color-accent: oklch(76% 0.08 70);
+  --color-accent-content: oklch(16% 0.012 95);
+  --color-neutral: oklch(83% 0.006 106);
+  --color-neutral-content: oklch(16% 0.012 95);
+  --radius-selector: 0.25rem;
+  --radius-field: 0.25rem;
+  --radius-box: 0.25rem;
+  --border: 1px;
+  --depth: 0;
+  --noise: 0;
+}
+
 html,
 body {
   height: 100%;
   margin: 0;
 }
 
+body {
+  background:
+    linear-gradient(to bottom, color-mix(in oklch, var(--color-base-200) 72%, transparent), transparent 18rem),
+    var(--color-base-100);
+  color: var(--color-base-content);
+  font-family: "STIX Two Text", "Latin Modern Roman", "CMU Serif", Georgia, "Times New Roman", serif;
+  font-variant-numeric: oldstyle-nums tabular-nums;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+::selection {
+  background: color-mix(in oklch, var(--color-primary) 22%, transparent);
+}
+
+.btn,
+.select,
+.input,
+.textarea,
+.badge {
+  border-radius: 0.25rem;
+  letter-spacing: 0;
+}
+
+.btn {
+  font-weight: 600;
+  text-transform: none;
+  box-shadow: none;
+}
+
+.select,
+.input,
+.textarea {
+  background-color: color-mix(in oklch, var(--color-base-100) 94%, var(--color-base-200));
+}
+
+.academic-surface {
+  border: 1px solid var(--color-base-300);
+  background: color-mix(in oklch, var(--color-base-100) 96%, white);
+}
+
+.academic-rule {
+  border-color: color-mix(in oklch, var(--color-base-300) 82%, var(--color-base-content));
+}
+
 .notion-markdown p {
-  margin: 0.5rem 0;
+  margin: 0.55rem 0;
 }
 
 .notion-markdown ul,
@@ -27,12 +122,15 @@ body {
 
 .notion-markdown blockquote {
   margin: 0.75rem 0;
-  border-left: 3px solid rgb(148 163 184 / 50%);
+  border-left: 2px solid color-mix(in oklch, var(--color-primary) 45%, var(--color-base-300));
   padding-left: 0.75rem;
+  color: color-mix(in oklch, var(--color-base-content) 82%, var(--color-primary));
 }
 
 .notion-markdown a {
+  color: var(--color-primary);
   text-decoration: underline;
+  text-underline-offset: 0.16em;
 }
 
 .notion-markdown strong {
@@ -45,8 +143,10 @@ body {
 
 .notion-markdown code {
   border-radius: 0.25rem;
-  background-color: rgb(148 163 184 / 15%);
+  background-color: color-mix(in oklch, var(--color-base-200) 84%, var(--color-primary));
   padding: 0.1rem 0.3rem;
+  font-family: "Iosevka", "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
+  font-size: 0.9em;
 }
 
 .notion-markdown h1,
@@ -55,6 +155,7 @@ body {
   margin: 1rem 0 0.5rem;
   font-weight: 700;
   line-height: 1.2;
+  letter-spacing: 0;
 }
 
 .notion-markdown h1 {

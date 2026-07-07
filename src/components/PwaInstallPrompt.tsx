@@ -61,8 +61,8 @@ export default function PwaInstallPrompt() {
   return (
     <Show when={isVisible() && !!installEvent() && !isInstalled()}>
       <div class="fixed inset-x-0 bottom-0 z-[60] px-3 pb-3 sm:px-4">
-        <div class="mx-auto flex max-w-3xl items-start gap-3 rounded-lg border border-base-300 bg-base-100 p-3 shadow-xl">
-          <div class="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-primary-content">
+        <div class="academic-surface mx-auto flex max-w-3xl items-start gap-3 rounded border p-3">
+          <div class="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded border border-primary/30 bg-base-100 text-primary">
             <FiSmartphone class="h-5 w-5" />
           </div>
           <div class="min-w-0 flex-1">

@@ -1,6 +1,6 @@
 import { createAsync } from "@solidjs/router";
 import { createEffect, createMemo, createResource, createSignal, For, Show } from "solid-js";
-import { FiFileText, FiFolder, FiLock } from "solid-icons/fi";
+import { FiFileText, FiFolder } from "solid-icons/fi";
 import CoursesList from "~/components/CoursesList";
 import NotionMarkdown from "~/components/NotionMarkdown";
 import notion from "~/lib/server/notion";
@@ -10,13 +10,16 @@ type CourseAtom = {
   id: string;
   name: string;
   type?: string;
+  order?: number;
   sectionNames?: string[];
+  sectionIds?: string[];
   relationIds?: string[];
 };
 
 type CourseSection = {
   id: string;
   name: string;
+  order?: number;
   relationIds?: string[];
   atoms: CourseAtom[];
 };
@@ -52,54 +55,32 @@ const isResourceAtom = (atom: CourseAtom) => {
   return RESOURCE_TYPE_PATTERNS.some((pattern) => value.includes(pattern));
 };
 
-const sortByName = (items: CourseAtom[]) =>
-  [...items].sort((a, b) => (a.name || "").localeCompare(b.name || "", "it"));
+const sortByOrder = <T extends { name?: string; order?: number }>(items: T[]) =>
+  [...items].sort((a, b) => {
+    if (a.order !== undefined && b.order !== undefined && a.order !== b.order) {
+      return a.order - b.order;
+    }
+    if (a.order !== undefined) return -1;
+    if (b.order !== undefined) return 1;
 
-const normalizedLabels = (labels: string[] = []) =>
-  labels.map(normalizeText).filter(Boolean);
+    return (a.name || "").localeCompare(b.name || "", "it");
+  });
 
 const atomBelongsToSection = (
   atom: CourseAtom,
   section: { id: string; name: string; relationIds?: string[] }
 ) => {
-  const sectionNames = normalizedLabels(atom.sectionNames);
   return (
+    atom.sectionIds?.includes(section.id) ||
     atom.relationIds?.includes(section.id) ||
-    section.relationIds?.includes(atom.id) ||
-    sectionNames.includes(normalizeText(section.name))
+    section.relationIds?.includes(atom.id)
   );
-};
-
-const groupBySectionLabel = (items: CourseAtom[]) => {
-  const groups = new Map<string, CourseAtom[]>();
-  const unassigned: CourseAtom[] = [];
-
-  for (const item of items) {
-    const sectionName = item.sectionNames?.find((name) => !!name.trim())?.trim();
-    if (!sectionName) {
-      unassigned.push(item);
-      continue;
-    }
-
-    groups.set(sectionName, [...(groups.get(sectionName) || []), item]);
-  }
-
-  return {
-    sections: [...groups.entries()]
-      .map(([name, groupItems]) => ({
-        id: `section-${normalizeText(name).replace(/[^a-z0-9]+/g, "-") || name}`,
-        name,
-        atoms: sortByName(groupItems)
-      }))
-      .sort((a, b) => a.name.localeCompare(b.name, "it")),
-    unassigned
-  };
 };
 
 const groupByType = (items: CourseAtom[], fallbackTitle: string): CourseGroup[] => {
   const groups = new Map<string, CourseAtom[]>();
 
-  for (const item of sortByName(items)) {
+  for (const item of sortByOrder(items)) {
     const key = item.type?.trim() || fallbackTitle;
     groups.set(key, [...(groups.get(key) || []), item]);
   }
@@ -117,17 +98,17 @@ function Accordion(props: {
   children: any;
 }) {
   return (
-    <details class="rounded-lg border border-base-300 bg-base-100 shadow-sm" open={props.open}>
+    <details class="academic-surface rounded border" open={props.open}>
       <summary class="flex cursor-pointer list-none items-center gap-3 px-3 py-3">
-        <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-base-200 text-base-content/70">
+        <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded border border-base-300 bg-base-100 text-primary">
           {props.icon === "file" ? <FiFileText class="h-4 w-4" /> : <FiFolder class="h-4 w-4" />}
         </span>
-        <span class="min-w-0 flex-1 break-words text-sm font-semibold">{props.title}</span>
+        <span class="min-w-0 flex-1 break-words text-sm font-bold">{props.title}</span>
         <Show when={props.count !== undefined}>
-          <span class="badge badge-ghost shrink-0">{props.count}</span>
+          <span class="badge badge-outline shrink-0">{props.count}</span>
         </Show>
       </summary>
-      <div class="space-y-2 border-t border-base-300 bg-base-200/30 p-3">{props.children}</div>
+      <div class="space-y-2 border-t academic-rule bg-base-100 p-3">{props.children}</div>
     </details>
   );
 }
@@ -144,10 +125,10 @@ function AtomButton(props: {
     <div class="space-y-2">
       <button
         type="button"
-        class={`flex min-h-11 w-full items-center gap-3 rounded-md border px-3 py-2 text-left text-sm transition-colors ${
+        class={`flex min-h-11 w-full items-center gap-3 rounded border px-3 py-2 text-left text-sm transition-colors ${
           isSelected()
             ? "border-primary bg-primary text-primary-content"
-            : "border-base-300 bg-base-100 hover:bg-base-200"
+            : "border-base-300 bg-base-100 hover:border-primary/50 hover:bg-base-200/50"
         }`}
         onClick={() => props.onSelect(props.item.id)}
       >
@@ -161,7 +142,7 @@ function AtomButton(props: {
 
 function FlashcardInline(props: { card: any; isLoading?: boolean }) {
   return (
-    <div class="rounded-lg border border-base-300 bg-base-100 p-3">
+    <div class="rounded border border-base-300 bg-base-100 p-3">
       <Show
         when={props.card}
         fallback={<p class="text-sm text-base-content/60">Caricamento flashcard...</p>}
@@ -169,7 +150,7 @@ function FlashcardInline(props: { card: any; isLoading?: boolean }) {
         {(card) => (
           <div class="space-y-3">
             <div>
-              <p class="text-xs font-semibold uppercase tracking-wide text-base-content/50">
+              <p class="text-xs font-bold uppercase tracking-[0.08em] text-base-content/50">
                 Flashcard
               </p>
               <h4 class="break-words text-base font-semibold">{card().name || "Senza titolo"}</h4>
@@ -223,7 +204,9 @@ export default function CoursesPage() {
   });
 
   const atoms = createMemo<CourseAtom[]>(() => course()?.atoms || []);
-  const sectionSource = createMemo<{ id: string; name: string; relationIds?: string[] }[]>(
+  const sectionSource = createMemo<
+    { id: string; name: string; order?: number; relationIds?: string[] }[]
+  >(
     () => course()?.sections || []
   );
   const resources = createMemo<CourseAtom[]>(() => course()?.resources || []);
@@ -231,29 +214,23 @@ export default function CoursesPage() {
   const courseSections = createMemo<CourseSection[]>(() => {
     const sectionAtoms = atoms().filter((atom) => !isResourceAtom(atom));
     const used = new Set<string>();
-    const sections = sectionSource().map((section) => {
+    const sections = sortByOrder(sectionSource()).map((section) => {
       const items = sectionAtoms.filter((atom) => atomBelongsToSection(atom, section));
       for (const item of items) used.add(item.id);
       return {
         ...section,
-        atoms: sortByName(items)
+        atoms: sortByOrder(items)
       };
-    });
+    }).filter((section) => section.atoms.length > 0);
 
     const unassigned = sectionAtoms.filter((atom) => !used.has(atom.id));
-    const fallbackGroups = groupBySectionLabel(unassigned);
-    const visibleSections =
-      sections.some((section) => section.atoms.length > 0) || fallbackGroups.sections.length === 0
-        ? sections
-        : [];
+    const result = [...sections];
 
-    const result = [...visibleSections, ...fallbackGroups.sections];
-
-    if (fallbackGroups.unassigned.length > 0) {
+    if (unassigned.length > 0) {
       result.push({
-        id: "all-atoms",
-        name: "Atomi",
-        atoms: sortByName(fallbackGroups.unassigned)
+        id: "unassigned-atoms",
+        name: "Senza sezione",
+        atoms: sortByOrder(unassigned)
       });
     }
 
@@ -284,56 +261,25 @@ export default function CoursesPage() {
 
   return (
     <section class="space-y-4 pb-24">
-      <aside class="rounded-lg border border-base-300 bg-base-100 p-4 shadow-sm">
-        <div class="mb-3 flex flex-wrap items-center justify-between gap-3">
-          <h1 class="text-xl font-bold">Corsi</h1>
-          <span class="badge badge-outline gap-1">
-            <FiLock class="h-3.5 w-3.5" />
-            Sola lettura
-          </span>
-        </div>
+      <div>
         <CoursesList
           items={courses() ?? []}
           selectedId={selectedId()}
           isLoading={!courses()}
           onSelect={setSelectedId}
         />
-      </aside>
+      </div>
 
       <Show
         when={course()}
         fallback={
-          <div class="rounded-lg border border-base-300 bg-base-100 p-4 text-sm text-base-content/70">
+          <div class="text-sm text-base-content/70">
             Seleziona un corso dall'elenco.
           </div>
         }
       >
-        {(selectedCourse) => (
-          <article class="min-w-0 space-y-4">
-            <header class="rounded-lg border border-base-300 bg-base-100 p-4 shadow-sm md:p-5">
-              <div class="flex flex-wrap items-start justify-between gap-3">
-                <div class="min-w-0">
-                  <h2 class="break-words text-2xl font-bold leading-tight md:text-3xl">
-                    {selectedCourse().name || "Senza titolo"}
-                  </h2>
-                  <div class="mt-2 flex flex-wrap gap-2">
-                    <For each={selectedCourse().properties}>
-                      {(property) => (
-                        <span class="badge badge-ghost h-auto max-w-full gap-1 py-1">
-                          <span class="opacity-70">{property.name}</span>
-                          <span class="min-w-0 truncate">{property.value}</span>
-                        </span>
-                      )}
-                    </For>
-                  </div>
-                </div>
-                <span class="badge badge-outline gap-1">
-                  <FiLock class="h-3.5 w-3.5" />
-                  Non modificabile
-                </span>
-              </div>
-            </header>
-
+        {() => (
+          <article class="min-w-0 space-y-3">
             <Accordion title="Corso completo" count={courseAtomCount()} icon="file" open>
               <Show
                 when={courseSections().length > 0}

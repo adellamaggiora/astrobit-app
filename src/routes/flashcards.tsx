@@ -255,7 +255,7 @@ export default function FlashcardsPage() {
             <Show
               when={orderedIds().length > 0}
               fallback={
-                <div class="rounded-xl border border-base-300 bg-base-200/40 p-4 text-sm text-base-content/80">
+                <div class="academic-surface rounded border p-4 text-sm text-base-content/80">
                   {hasLoadedFirstPage()
                     ? "Nessuna flashcard trovata con i filtri selezionati."
                     : "Caricamento flashcard..."}
@@ -265,7 +265,7 @@ export default function FlashcardsPage() {
               <Show
                 when={flashcardData()}
                 fallback={
-                  <div class="rounded-xl border border-base-300 bg-base-200/40 p-4 text-sm text-base-content/80">
+                  <div class="academic-surface rounded border p-4 text-sm text-base-content/80">
                     Caricamento flashcard...
                   </div>
                 }

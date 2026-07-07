@@ -47,7 +47,7 @@ export default function FlashcardsList(props: {
   });
 
   return (
-    <div class="rounded-xl border border-base-300 bg-base-100 shadow-sm">
+    <div class="academic-surface rounded border">
       <div ref={scrollRef} class="max-h-[42vh] min-h-[240px] overflow-auto p-2">
         <Show
           when={props.items.length > 0}
@@ -57,7 +57,7 @@ export default function FlashcardsList(props: {
             </div>
           }
         >
-          <div class="overflow-hidden rounded-lg border border-base-300 divide-y divide-base-300">
+          <div class="overflow-hidden rounded border border-base-300 divide-y divide-base-300">
             <For each={props.items}>
               {(item, index) => (
                 <button
@@ -65,7 +65,7 @@ export default function FlashcardsList(props: {
                   class={`w-full min-h-16 px-3 py-3 text-left text-sm transition-colors ${
                     props.selectedId === item.id
                       ? "bg-primary text-primary-content"
-                      : "bg-base-200/50 hover:bg-base-300/70"
+                      : "bg-base-100 hover:bg-base-200/60"
                   }`}
                   onClick={() => props.onSelect(item.id)}
                 >

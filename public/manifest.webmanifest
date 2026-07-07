@@ -1,13 +1,13 @@
 {
   "name": "Astrobit",
   "short_name": "Astrobit",
-  "description": "Flashcards e corsi Astrobit",
+  "description": "Astrobit",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "id": "/",
   "background_color": "#ffffff",
-  "theme_color": "#10b981",
+  "theme_color": "#334155",
   "prefer_related_applications": false,
   "icons": [
     {

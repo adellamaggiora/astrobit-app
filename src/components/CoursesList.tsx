@@ -23,10 +23,12 @@ export default function CoursesList(props: {
     >
       <label class="form-control w-full">
         <span class="label pb-1">
-          <span class="label-text font-medium">Seleziona corso</span>
+          <span class="label-text text-xs font-bold uppercase tracking-[0.08em] text-base-content/60">
+            Corso
+          </span>
         </span>
         <select
-          class="select select-bordered w-full"
+          class="select select-bordered w-full bg-base-100"
           value={props.selectedId || ""}
           onChange={(event) => props.onSelect(event.currentTarget.value)}
         >
@@ -34,9 +36,6 @@ export default function CoursesList(props: {
             {(item) => (
               <option value={item.id}>
                 {item.name || "Senza titolo"}
-                <Show when={item.properties?.[0]}>
-                  {(property) => ` - ${property().name}: ${property().value}`}
-                </Show>
               </option>
             )}
           </For>

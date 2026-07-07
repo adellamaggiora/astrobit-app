@@ -1,5 +1,5 @@
 import { createMemo } from "solid-js";
-import { FiChevronLeft, FiChevronRight, FiShuffle } from "solid-icons/fi";
+import { FiShuffle } from "solid-icons/fi";
 import NotionMarkdown from "./NotionMarkdown";
 
 export default function FlashcardViewer(props: {
@@ -16,6 +16,13 @@ export default function FlashcardViewer(props: {
   onShuffle?: () => void;
   onOpenFlashcard?: (id: string) => void;
 }) {
+  let touchStartX = 0;
+  let touchStartY = 0;
+  let pointerStartX = 0;
+  let pointerStartY = 0;
+  let pointerStartTime = 0;
+  let didSwipe = false;
+
   const typeIcon = createMemo(() => {
     const type = props.type || "";
     const matches = type.match(/\p{Extended_Pictographic}/gu) || [];
@@ -31,6 +38,18 @@ export default function FlashcardViewer(props: {
   });
 
   const handleKeyDown = (event: KeyboardEvent) => {
+    if (event.key === "ArrowLeft") {
+      event.preventDefault();
+      props.onPrev?.();
+      return;
+    }
+
+    if (event.key === "ArrowRight") {
+      event.preventDefault();
+      props.onNext?.();
+      return;
+    }
+
     if (event.key !== "Enter" && event.key !== " ") return;
     event.preventDefault();
     props.onFlip();
@@ -42,30 +61,59 @@ export default function FlashcardViewer(props: {
     action?.();
   };
 
-  const headerControls = () => (
-    <div class="ml-auto flex shrink-0 items-center gap-3">
-      <button
-        type="button"
-        class="btn btn-xs btn-outline btn-square"
-        disabled={!props.canGoPrev}
-        onClick={(event) => handleControlClick(event, props.onPrev)}
-        aria-label="Precedente"
-        title="Precedente"
-      >
-        <FiChevronLeft class="h-4 w-4" />
-      </button>
-      <button
-        type="button"
-        class="btn btn-xs btn-outline btn-square"
-        disabled={!props.canGoNext}
-        onClick={(event) => handleControlClick(event, props.onNext)}
-        aria-label="Successiva"
-        title="Successiva"
-      >
-        <FiChevronRight class="h-4 w-4" />
-      </button>
-    </div>
-  );
+  const navigateBySwipe = (deltaX: number, deltaY: number) => {
+    const absX = Math.abs(deltaX);
+    const absY = Math.abs(deltaY);
+
+    if (absX < 56 || absX < absY * 1.25) return false;
+
+    if (deltaX > 0) {
+      props.onPrev?.();
+    } else {
+      props.onNext?.();
+    }
+
+    return true;
+  };
+
+  const handleTouchStart = (event: TouchEvent) => {
+    const touch = event.touches[0];
+    if (!touch) return;
+    touchStartX = touch.clientX;
+    touchStartY = touch.clientY;
+  };
+
+  const handleTouchEnd = (event: TouchEvent) => {
+    const touch = event.changedTouches[0];
+    if (!touch) return;
+    didSwipe = navigateBySwipe(touch.clientX - touchStartX, touch.clientY - touchStartY);
+  };
+
+  const handlePointerDown = (event: PointerEvent) => {
+    if (event.pointerType === "touch") return;
+    pointerStartX = event.clientX;
+    pointerStartY = event.clientY;
+    pointerStartTime = Date.now();
+  };
+
+  const handlePointerUp = (event: PointerEvent) => {
+    if (event.pointerType === "touch" || !pointerStartTime) return;
+
+    const elapsed = Date.now() - pointerStartTime;
+    pointerStartTime = 0;
+    if (elapsed > 800) return;
+
+    didSwipe = navigateBySwipe(event.clientX - pointerStartX, event.clientY - pointerStartY);
+  };
+
+  const handleCardClick = () => {
+    if (didSwipe) {
+      didSwipe = false;
+      return;
+    }
+
+    props.onFlip();
+  };
 
   const shuffleControl = () => (
     <button
@@ -82,11 +130,11 @@ export default function FlashcardViewer(props: {
   );
 
   const cardHeader = (hint: string) => (
-    <div class="flex min-h-7 items-center gap-2">
+    <div class="flex min-h-7 items-center gap-2 border-b academic-rule pb-2">
       <span class="flex min-w-0 items-center gap-2 text-xs text-base-content/60">
         {typeIcon() && (
           <span
-            class="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-base-300 bg-base-200 text-base shadow-sm"
+            class="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded border border-base-300 bg-base-100 text-base"
             title={props.type}
             aria-label={`Tipologia: ${props.type}`}
           >
@@ -95,7 +143,6 @@ export default function FlashcardViewer(props: {
         )}
         <span class="font-normal text-base-content/50">{hint}</span>
       </span>
-      {headerControls()}
     </div>
   );
 
@@ -103,31 +150,35 @@ export default function FlashcardViewer(props: {
     <div
       role="button"
       tabIndex={0}
-      class="relative block h-[22rem] w-full cursor-pointer md:h-[26rem]"
-      onClick={props.onFlip}
+      class="relative block h-[22rem] w-full cursor-pointer touch-pan-y select-none md:h-[26rem]"
+      onClick={handleCardClick}
       onKeyDown={handleKeyDown}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+      onPointerDown={handlePointerDown}
+      onPointerUp={handlePointerUp}
       aria-label="Capovolgi flashcard"
     >
-      <div class="relative h-full w-full rounded-2xl border border-base-300 bg-base-100 shadow-md">
+      <div class="academic-surface relative h-full w-full rounded border">
         <div
-          class={`absolute inset-0 flex h-full flex-col rounded-2xl p-3 text-left transition-opacity duration-150 md:p-4 ${
+          class={`absolute inset-0 flex h-full flex-col rounded p-3 text-left transition-opacity duration-150 md:p-4 ${
             props.isFlipped ? "pointer-events-none opacity-0" : "opacity-100"
           }`}
         >
-          {cardHeader("clicca per retro")}
-          <div class="mt-2 min-h-0 flex-1 overflow-auto px-0 md:px-1">
-            <p class="text-lg font-medium leading-relaxed">{props.front}</p>
+          {cardHeader("tocca: risposta · swipe: cambia")}
+          <div class="mt-4 min-h-0 flex-1 overflow-auto px-0 md:px-1">
+            <p class="text-xl font-semibold leading-relaxed md:text-2xl">{props.front}</p>
           </div>
           <div class="mt-2 flex justify-end">{shuffleControl()}</div>
         </div>
 
         <div
-          class={`absolute inset-0 flex h-full flex-col rounded-2xl p-3 text-left transition-opacity duration-150 md:p-4 ${
+          class={`absolute inset-0 flex h-full flex-col rounded p-3 text-left transition-opacity duration-150 md:p-4 ${
             props.isFlipped ? "opacity-100" : "pointer-events-none opacity-0"
           }`}
         >
-          {cardHeader("clicca per fronte")}
-          <div class="mt-2 min-h-0 flex-1 overflow-auto px-0 md:px-1">
+          {cardHeader("tocca: domanda · swipe: cambia")}
+          <div class="mt-4 min-h-0 flex-1 overflow-auto px-0 md:px-1">
             <NotionMarkdown
               content={props.back || ""}
               class="text-base leading-relaxed"

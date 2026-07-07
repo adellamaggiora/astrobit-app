@@ -18,7 +18,7 @@ const Toolbar: ParentComponent<{
     const [isMenuOpen, setIsMenuOpen] = createSignal(false);
 
     const dbTitle = createMemo(() => {
-        const title = db.latest?.title;
+        const title = (db() ?? db.latest)?.title;
         if (typeof title === "string") return title || "Astrobit";
 
         return (title || [])
@@ -28,7 +28,7 @@ const Toolbar: ParentComponent<{
     });
 
     const dbDescription = createMemo(() => {
-        const description = db.latest?.description;
+        const description = (db() ?? db.latest)?.description;
         if (typeof description === "string") return description;
 
         return (description || [])
@@ -62,8 +62,8 @@ const Toolbar: ParentComponent<{
 
     return (
         <div class="min-h-screen">
-            <header class="fixed top-0 z-50 w-full border-b border-base-300 bg-base-200/95 backdrop-blur">
-                <div class="mx-auto flex min-h-12 max-w-7xl items-center gap-2 px-3 py-1.5 sm:min-h-14 sm:px-4">
+            <header class="fixed top-0 z-50 w-full border-b academic-rule bg-base-100/95 backdrop-blur">
+                <div class="mx-auto flex min-h-12 max-w-5xl items-center gap-2 px-3 py-1.5 sm:min-h-14 sm:px-4">
                     <button
                         type="button"
                         class="btn btn-ghost btn-sm btn-square shrink-0"
@@ -73,12 +73,15 @@ const Toolbar: ParentComponent<{
                     >
                         <FiMenu class="h-5 w-5" />
                     </button>
+                    <span class="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded border border-primary/30 bg-base-100">
+                        <img src="/icon.svg" alt="" class="h-8 w-8" aria-hidden="true" />
+                    </span>
                     <div class="min-w-0 flex-1 leading-tight">
-                        <span class="block truncate whitespace-nowrap text-sm font-semibold sm:text-base">
+                        <span class="block truncate whitespace-nowrap text-sm font-bold sm:text-base">
                             {dbTitle()}
                             {dbEmojis() ? ` ${dbEmojis()}` : ""}
                         </span>
-                        <span class="hidden truncate text-xs italic text-base-content/70 sm:block">
+                        <span class="hidden truncate text-xs italic text-base-content/65 sm:block">
                             {dbTagline()}
                         </span>
                     </div>
@@ -112,10 +115,13 @@ const Toolbar: ParentComponent<{
                         onClick={() => setIsMenuOpen(false)}
                         aria-label="Chiudi menu"
                     />
-                    <aside class="absolute left-0 top-0 flex h-full w-72 max-w-[86vw] flex-col border-r border-base-300 bg-base-100 shadow-xl">
-                        <div class="flex min-h-14 items-center gap-2 border-b border-base-300 px-4">
+                    <aside class="absolute left-0 top-0 flex h-full w-72 max-w-[86vw] flex-col border-r academic-rule bg-base-100">
+                        <div class="flex min-h-14 items-center gap-2 border-b academic-rule px-4">
+                            <span class="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded border border-primary/30 bg-base-100">
+                                <img src="/icon.svg" alt="" class="h-9 w-9" aria-hidden="true" />
+                            </span>
                             <div class="min-w-0 flex-1">
-                                <p class="truncate text-sm font-semibold">{dbTitle()}</p>
+                                <p class="truncate text-sm font-bold">{dbTitle()}</p>
                                 <p class="truncate text-xs text-base-content/60">{dbTagline()}</p>
                             </div>
                             <button
@@ -134,10 +140,10 @@ const Toolbar: ParentComponent<{
                                 {(r) => (
                                     <A
                                         href={r.path}
-                                        class={`btn w-full justify-start gap-3 ${
+                                        class={`btn w-full justify-start gap-3 border ${
                                             isRouteActive(r.path)
-                                                ? "btn-primary text-primary-content"
-                                                : "btn-ghost"
+                                                ? "border-primary bg-primary text-primary-content"
+                                                : "btn-ghost border-transparent"
                                         }`}
                                         onClick={() => setIsMenuOpen(false)}
                                     >
@@ -151,7 +157,7 @@ const Toolbar: ParentComponent<{
                 </div>
             </Show>
 
-            <main class="container mx-auto px-3 pt-14 sm:px-4 sm:pt-16">
+            <main class="mx-auto max-w-5xl px-3 pt-14 sm:px-4 sm:pt-16">
                 {props.children}
             </main>
         </div>
