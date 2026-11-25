@@ -1701,6 +1701,13 @@ function drawNow() {
     const f = Math.min(1, u), near = dm && dm.get(e.source.id) <= dm.get(e.target.id) ? e.source : e.target, far = near === e.source ? e.target : e.source;
     return [near.x, near.y, near.x + (far.x - near.x) * f, near.y + (far.y - near.y) * f, f, u];
   };
+  /* arrivo: nel momento in cui la scarica raggiunge un atomo, quello si illumina un istante. Più lontano è, più debole; se sono tanti, tutti più discreti */
+  const FL = 420, flashes = [];
+  if (zel < 1e9 && litE.size) {
+    const far = new Map(); litE.forEach((arr, d) => { for (const e of arr) { const f = dm.get(e.source.id) <= dm.get(e.target.id) ? e.target : e.source; if (!far.has(f.id)) far.set(f.id, [f, d]); } });
+    const att = far.size > 10 ? Math.sqrt(10 / far.size) : 1;
+    far.forEach(([n, d]) => { const v = (zel - ((d - 1) * STEP + HOP)) / FL; if (v < 0) zbusy = true; else if (v < 1) { zbusy = true; flashes.push([n, v, att * Math.max(0.3, 1 / (1 + 0.3 * (d - 1)))]); } });
+  }
   const parts = []; litE.forEach((arr, d) => { for (const e of arr) { const q = part(e, d); if (q) parts.push([e, q]); } });
   if (G.dark && parts.length) { ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.strokeStyle = col.hi; ctx.lineWidth = 3.5 / k; for (const [e, q] of parts) { ctx.globalAlpha = 0.14 * eA(e); ctx.beginPath(); ctx.moveTo(q[0], q[1]); ctx.lineTo(q[2], q[3]); ctx.stroke(); } ctx.restore(); }
   ctx.strokeStyle = col.hi; ctx.lineWidth = 1.2 / k;
@@ -1736,6 +1743,18 @@ function drawNow() {
       ctx.strokeStyle = v === "1" ? col.s1r : col.s2r; ctx.lineWidth = 0.9 / k; ctx.stroke(); }
   });
   ctx.globalAlpha = 1;
+  for (const [n, v, I] of flashes) {
+    if (!vis(n)) continue;
+    const bump = Math.sin(Math.PI * Math.min(1, v * 1.15)), r = n.rw * (1 + 0.28 * bump * I) , R = (n.rw * k * 3.6 + 8) / k;
+    if (G.dark) {
+      ctx.save(); ctx.globalCompositeOperation = "lighter";
+      ctx.globalAlpha = 0.75 * bump * I; ctx.drawImage(haloSprite(n.a.valid), n.x - R, n.y - R, 2 * R, 2 * R);
+      const L = (n.rw * k * 5 + 14) / k; ctx.globalAlpha = 0.85 * (1 - v) * I; ctx.drawImage(spikeSprite(), n.x - L, n.y - L, 2 * L, 2 * L);
+      ctx.restore();
+    }
+    ctx.globalAlpha = 1; ctx.beginPath(); ctx.arc(n.x, n.y, r, 0, 2 * Math.PI); ctx.fillStyle = G.dark ? (n.a.valid ? col.s1c : col.s2c) : (n.a.valid ? col.s1 : col.s2); ctx.fill();
+    if (G.dark) { ctx.lineWidth = 0.9 / k; ctx.strokeStyle = n.a.valid ? col.s1r : col.s2r; ctx.stroke(); }
+  }
   const ring = (n, c, wd) => { ctx.beginPath(); ctx.arc(n.x, n.y, n.rw + 3 / k, 0, 2 * Math.PI); ctx.strokeStyle = c; ctx.lineWidth = wd / k; ctx.stroke(); };
   if (f) { const c = G.nodes.find((n) => n.id === f); if (c) ring(c, col.accent, 2.2); }
   if (actN && !PM) ring(actN, col.ink, 1.8);
