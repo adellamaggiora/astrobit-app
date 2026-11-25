@@ -1839,7 +1839,7 @@ function computeAudit() {
   add("dup", "Titoli quasi duplicati", "media", "Stesse parole chiave nel titolo. Può essere un doppione da fondere, oppure due atomi (es. teoria e metodo) che andrebbero almeno collegati.", dup);
   /* link nel corpo: servono i corpi letti */
   const have = scope.filter((a) => B.has(a.id)), allOk = [...D.atoms.values()].filter(srcOk), covAll = allOk.filter((a) => B.has(a.id)).length;
-  const etichProb = [], etichSin = [], self = [], fuori = [], paginaNonAtomo = [], valBoil = [], cross = [], dupUtili = [], dominio = [];
+  const etichProb = [], etichSin = [], self = [], fuori = [], paginaNonAtomo = [], valBoil = [], cross = [], dominio = [];
   const outs = new Map(), inb = new Map();
   allOk.forEach((a) => {
     if (!B.has(a.id)) return;
@@ -1850,11 +1850,10 @@ function computeAudit() {
     });
   });
   have.forEach((a) => {
-    const seen = new Set(), seenU = new Set();
+    const seen = new Set();
     B.get(a.id).links.forEach((l) => {
       const k = l.to + "|" + l.label + "|" + l.kind;
       if (l.host && !D.atoms.has(l.to) && !D.known.has(l.to)) return;
-      if (l.kind === "utile") { if (seenU.has(l.to)) { dupUtili.push(I(a, "«" + (l.label || "?") + "» compare più volte nei link utili")); return; } seenU.add(l.to); }
       if (seen.has(k)) return; seen.add(k);
       if (l.host) { const t0 = D.atoms.get(l.to); dominio.push(I(a, "«" + (l.label || "?") + "» punta a " + l.host + " invece che a Notion: il collegamento non si apre", t0 && t0.id !== a.id ? [t0] : [])); }
       if (l.to === a.id) { self.push(I(a, "il link «" + l.label + "» punta all'atomo stesso")); return; }
@@ -1908,16 +1907,14 @@ function computeAudit() {
   add("valboil", "Atomi validati che citano atomi nel bollitore", "media", "Con «Solo validati» questi collegamenti spariscono dal grafo e dal lettore.", valBoil, { link: true });
   add("lab-sin", "Etichetta diversa dal titolo, senza alternative", "info", "Nessun altro atomo corrisponde alle parole del link: di solito è un sinonimo o una forma abbreviata. Da rivedere a campione.", etichSin, { link: true });
   add("non-atomo", "Link a sezioni, corsi o risorse", "info", "Il link non porta a un atomo ma a un'altra tabella del database.", paginaNonAtomo, { link: true });
-  add("dup-utili", "Link utili ripetuti", "info", "Lo stesso atomo è elencato più volte nella sezione «Link utili».", dupUtili, { link: true });
   add("cross", "Link verso atomi di un altro corso", "info", "Spesso legittimi (concetti condivisi), ma vale la pena controllarli.", cross, { link: true });
   /* completezza della rete: servono tutti i corpi */
   const unread = allOk.filter((a) => !B.has(a.id) && CR.failedSet.has(a.id)), full = covAll > 0 && covAll + unread.length >= allOk.length;
-  const isol = [], noOut = [], noIn = [], oneWay = [];
+  const isol = [], noOut = [], noIn = [];
   if (full) {
     scope.forEach((a) => {
       const o = (outs.get(a.id) || new Set()).size, i = (inb.get(a.id) || new Set()).size;
       if (!o && !i) isol.push(I(a, "nessun collegamento in entrata né in uscita")); else if (!o) noOut.push(I(a, "cita " + 0 + " atomi; è citato da " + i)); else if (!i) noIn.push(I(a, "non è citato da nessuno; cita " + o));
-      B.get(a.id).links.forEach((l) => { if (l.kind === "utile" && D.atoms.has(l.to) && srcOk(D.atoms.get(l.to)) && l.to !== a.id && !(outs.get(l.to) || new Set()).has(a.id)) { const t = D.atoms.get(l.to); oneWay.push(I(a, "«" + t.titolo + "» è nei link utili, ma non lo cita a sua volta", [t])); } });
     });
   }
   const gate = (id, title, sev, desc, items) => add(id, title, sev, desc + (full ? "" : " (Serve la lettura di tutti gli atomi: " + covAll + " / " + allOk.length + ")"), items, { link: true, needsFull: !full });
@@ -1925,7 +1922,6 @@ function computeAudit() {
   gate("isolati", "Atomi isolati", "media", "Non citano e non sono citati: sono fuori dal grafo.", isol);
   gate("no-out", "Atomi che non citano nessun altro atomo", "info", "Una definizione senza nemmeno un termine collegato è raro: controlla se mancano i link.", noOut);
   gate("no-in", "Atomi che nessuno cita", "info", "Utile per trovare atomi che dovrebbero essere richiamati da altri.", noIn);
-  gate("one-way", "Link utili senza ritorno", "info", "A elenca B nei link utili ma B non cita A.", oneWay.filter((x, i, arr) => arr.findIndex((y) => y.a === x.a && y.refs[0] === x.refs[0]) === i));
   AUD.key = key; AUD.res = { cats, covScope: have.length, scopeN: scope.length, covAll, allN: allOk.length, full };
   return AUD.res;
 }
