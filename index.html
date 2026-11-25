@@ -384,7 +384,7 @@ const TICON = {
 };
 const tipoIco = (t) => TICON[t] || EMO[t] || "";
 /* colori per tipologia: unica fonte per grafo, pallini della tabella e filtri (pensati per il cielo scuro; nel tema chiaro si scuriscono) */
-const TCOL = { Definizione: "#e4d3a5", Concetto: "#e56986", Teoria: "#6990e5", Metodo: "#36a16a" }, TCOL_ALT = "#b8bcc8";
+const TCOL = { Definizione: "#f6c744", Concetto: "#ff5580", Teoria: "#5a8dff", Metodo: "#24c273" }, TCOL_ALT = "#b8bcc8";
 const tcolOf = (tipo) => TCOL[tipo] || TCOL_ALT;
 const tdot = (tipo, cls) => '<span class="tdot' + (cls ? " " + cls : "") + '" style="--tc:' + tcolOf(tipo) + '" aria-hidden="true"></span>';
 const emojiOf = (t) => (String(t || "").match(/\p{Extended_Pictographic}(?:\uFE0F|\u200D\p{Extended_Pictographic})*/u) || [""])[0];
