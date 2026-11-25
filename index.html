@@ -1345,8 +1345,8 @@ V.grafo = () => {
     TIPI.map((t) => '<span><span class="lemo">' + (EMO[t] || "") + "</span>" + t + "</span>").join("") +
     '</div><div class="gtip" id="gtip" hidden></div><div class="gempty" id="gempty" hidden></div></div>' +
     '<p class="gcmd">' + (f ? "Sotto i prerequisiti, sopra i dipendenti · " : "") +
-    "Passa sopra: anteprima · Clic: blocca il percorso · Clic su un atomo illuminato: apre la scheda · Clic sul vuoto: sblocca" +
-    (f ? "" : " · Doppio clic: vista dell'atomo") + "</p></div>";
+    "Passa sopra: anteprima · Clic: seleziona e mostra i collegamenti · Doppio clic: apre la scheda (al tocco: tocca di nuovo l'atomo) · Clic sul vuoto: deseleziona" +
+    "</p></div>";
 };
 function crawlStatus(scope) {
   const cov = coverage(scope);
@@ -1380,8 +1380,8 @@ async function initGraph() {
   const cv = G.cv;
   cv.addEventListener("pointermove", (e) => { if (e.pointerType === "touch") return; const n = nodeAt(e); if (n !== G.hover) { G.hover = n; cv.style.cursor = n && pairSelectable(n) ? "pointer" : ""; draw(); } if (n) showTip(n, e); else hideTip(); });
   cv.addEventListener("pointerleave", () => { G.hover = null; hideTip(); draw(); });
-  /* passaggio = anteprima; clic su un atomo = blocca il suo percorso; clic su un atomo del percorso bloccato = apre la scheda;
-     clic sul vuoto = sblocca. Al tocco vale lo stesso, senza anteprima */
+  /* passaggio = anteprima; clic su un atomo = lo seleziona (ne blocca i collegamenti); doppio clic = apre la scheda;
+     clic sul vuoto = deseleziona. Al tocco non c'è il doppio clic: il secondo tocco sull'atomo già selezionato apre la scheda */
   let ptype = "mouse"; cv.addEventListener("pointerdown", (e) => { ptype = e.pointerType; });
   cv.addEventListener("click", (e) => {
     const n = nodeAt({ clientX: e.clientX, clientY: e.clientY, pointerType: ptype });
@@ -1395,18 +1395,12 @@ async function initGraph() {
       }
       return;
     }
-    if (e.detail >= 2 && ptype !== "touch" && !S.g.focus) return; /* secondo clic di un doppio clic: lo gestisce il doppio clic */
     if (!n) { G.lock = null; draw(); return; }
-    const ls = G.lock && litSet(G.lock);
-    if ((ls && ls.has(n.id)) || (!G.lock && !litSet(n.id))) {
-      hideTip();
-      /* nel grafo generale col mouse si attende un attimo: se è un doppio clic, vince la vista dell'atomo */
-      if (ptype !== "touch" && !S.g.focus) { clearTimeout(G.clickT); G.clickT = setTimeout(() => openAtom(n.id), 260); } else openAtom(n.id);
-    }
+    if (ptype === "touch" && G.lock === n.id) { hideTip(); openAtom(n.id); }
     else { G.lock = n.id; if (ptype === "touch") hideTip(); }
     draw();
   });
-  cv.addEventListener("dblclick", (e) => { clearTimeout(G.clickT); if (ptype === "touch" || S.g.pairMode) return; const n = nodeAt(e); if (n) { S.g.focus = n.id; G.rbKey = null; if (S.drawer) closeDrawer(); renderView(); } });
+  cv.addEventListener("dblclick", (e) => { if (ptype === "touch" || S.g.pairMode) return; const n = nodeAt(e); if (n) { G.lock = n.id; hideTip(); openAtom(n.id); draw(); } });
 }
 /* aggiorna solo il grafo (filtro per parola, vicini): il resto della vista resta com'è */
 function refreshGraph() {
