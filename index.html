@@ -397,7 +397,7 @@ const tcolOf = (tipo) => TCOL[tipo] || TCOL_ALT;
 const tdot = (tipo, cls) => '<span class="tdot' + (cls ? " " + cls : "") + '" style="--tc:' + tcolOf(tipo) + '" aria-hidden="true"></span>';
 const emojiOf = (t) => (String(t || "").match(/\p{Extended_Pictographic}(?:\uFE0F|\u200D\p{Extended_Pictographic})*/u) || [""])[0];
 const TTL = 7 * 864e5, TTL_BOIL = 12 * 36e5, CONC = 4, WEAK_N = 20, LIST_STEP = 120;
-const TABS = [["corsi", "Galassie"], ["atomi", "Atomi"], ["grafo", "Cosmo"], ["flash", "Esplora"], ["qualita", "Osservatorio"]];
+const TABS = [["corsi", "Galassie"], ["atomi", "Stelle"], ["grafo", "Cosmo"], ["flash", "Esplora"], ["qualita", "Osservatorio"]];
 
 /* ============ utilità ============ */
 const $ = (s) => document.querySelector(s);
