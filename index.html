@@ -989,7 +989,7 @@ function onFilterChange(openId) {
   store.set("corsi2", [...S.corsi]); store.set("tipi", [...S.tipi]);
   renderChrome();
   if (openId) { const d = $("#" + openId); if (d) d.open = true; }
-  if (S.tab === "grafo" && G.cv && !S.g.focus) { refreshGraph(); updateCrawlUI(); ensureCrawl(); }
+  if (S.tab === "grafo" && G.cv) { refreshGraph(); updateCrawlUI(); if (!S.g.focus) ensureCrawl(); }
   else if (S.tab !== "grafo") renderView();
 }
 let viewAfter = null;
@@ -1202,7 +1202,11 @@ function buildGraph() {
     G.path.rel.forEach((y) => dist.set(y, 1));
     G.src = [f.id]; G.fd = dist;
     atoms = [...dist.keys()].map((id) => D.atoms.get(id));
+    /* ricerca per parola anche nel grafo del singolo atomo: restano l'atomo scelto e i nodi del percorso che la contengono */
+    G.fq = null;
+    if (aq) { const tot = atoms.length; atoms = atoms.filter((a) => a.id === f.id || aqMatch(a, aq)); G.fq = { hit: atoms.length - 1, tot: tot - 1 }; }
   } else {
+    G.fq = null;
     const base = atomsIn({ text: false });
     if (aq) {
       /* le stelle trovate sono il punto di partenza; si mostrano anche quelli entro il massimo di archi */
@@ -1494,7 +1498,7 @@ function startSim() {
   const gs = $("#gstat");
   if (gs) gs.textContent = !N ? (G.filtered ? "Nessuna stella contiene «" + S.aq.trim() + "»" : "Nessuna stella da mostrare") :
     (G.filtered ? G.src.length + " trovati" + (S.g.dmax ? " · " + (N - G.src.length) + (S.g.dmax >= 99 ? " collegati" : " entro " + S.g.dmax + (S.g.dmax === 1 ? " arco" : " archi")) : "") + " · " : N + " nodi · ") +
-    G.links.length + " collegamenti" + (G.isolated && !G.filtered ? " · " + G.isolated + " senza collegamenti" + (G.isoOut ? " (" + G.isoOut + " collegati solo a stelle fuori da galassia, sorgente o tipologia scelti)" : "") : "") + (!G.links.length && N ? " · nessun collegamento letto finora" : "");
+    G.links.length + " collegamenti" + (G.isolated && !G.filtered ? " · " + G.isolated + " senza collegamenti" + (G.isoOut ? " (" + G.isoOut + " collegati solo a stelle fuori da galassia, sorgente o tipologia scelti)" : "") : "") + (G.fq ? " · «" + S.aq.trim() + "»: " + G.fq.hit + " su " + G.fq.tot + " del percorso" : "") + (!G.links.length && N ? " · nessun collegamento letto finora" : "");
 }
 function fitView(focusId) {
   const d3 = window.d3, ns = G.nodes; if (!ns.length || !G.zoom) return;
