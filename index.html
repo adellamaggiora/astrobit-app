@@ -1212,7 +1212,7 @@ function buildGraph() {
   const links = [...em.values()], deg = new Map();
   links.forEach((e) => { deg.set(e.source, (deg.get(e.source) || 0) + 1); deg.set(e.target, (deg.get(e.target) || 0) + 1); });
   const nodes = atoms.map((a) => ({ id: a.id, a, deg: deg.get(a.id) || 0, r: 5 + Math.sqrt(deg.get(a.id) || 0) * 1.8, x: NaN, y: NaN }));
-  G.nodes = nodes; G.links = links; G.idset = ids;
+  G.nodes = nodes; G.links = links; G.idset = ids; G.multi = false; G.hubs = null; G.hz = null;
   const srcSet = new Set(G.src || []);
   G.top = G.filtered && srcSet.size <= 40 ? srcSet : new Set(nodes.slice().sort((a, b) => b.deg - a.deg).slice(0, 28).filter((n) => n.deg > 0).map((n) => n.id));
   G.spk = new Set(nodes.slice().sort((a, b) => b.deg - a.deg).slice(0, 12).filter((n) => n.deg > 1).map((n) => n.id));
@@ -1627,6 +1627,8 @@ function activeTarget() {
 function draw() { if (!G.raf && G.ctx) G.raf = requestAnimationFrame(() => { G.raf = 0; drawNow(); }); }
 function drawNow() {
   const ctx = G.ctx; if (!ctx || !G.tf) return;
+  /* appena ricostruito il grafo (ad esempio tornando da un'altra scheda) i nodi non hanno ancora posizione: si disegna dopo startSim, altrimenti l'errore ne blocca l'avvio */
+  if (G.nodes.length && !G.nodes.every((n) => Number.isFinite(n.x) && Number.isFinite(n.y))) return;
   const { w, h, tf, col } = G, k = tf.k;
   ctx.setTransform(G.dpr, 0, 0, G.dpr, 0, 0); ctx.clearRect(0, 0, w, h); if (G.dark) drawSky(ctx); ctx.save(); ctx.translate(tf.x, tf.y); ctx.scale(k, k);
   /* bersaglio: l'atomo sotto il mouse (anteprima) oppure quello bloccato col clic.
