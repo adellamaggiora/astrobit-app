@@ -2,7 +2,7 @@ name: Esporta da Notion e pubblica
 
 on:
   schedule:
-    - cron: "23 */3 * * *"      # ogni 3 ore
+    - cron: "23 * * * *"        # ogni ora
   workflow_dispatch:
     inputs:
       full:

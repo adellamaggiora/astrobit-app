@@ -2089,7 +2089,9 @@ $("#q").addEventListener("keydown", (e) => {
 function pickSugg(id) { $("#sugg").hidden = true; openAtom(id); }
 document.addEventListener("mousedown", (e) => { const b = e.target.closest("[data-act='sugg']"); if (b) { e.preventDefault(); pickSugg(b.dataset.id); } else if (!e.target.closest(".search")) $("#sugg").hidden = true; });
 $("#scrim").addEventListener("click", closeDrawer);
-$("#reload").addEventListener("click", () => { if (mcp || STATIC) load(false); });
+/* fuori da Claude i dati arrivano dall'esportazione: il pulsante apre su GitHub l'avvio manuale del workflow */
+const WORKFLOW_URL = "https://github.com/adellamaggiora/astrobit-app/actions/workflows/esporta-e-pubblica.yml";
+$("#reload").addEventListener("click", () => { if (STATIC) window.open(WORKFLOW_URL, "_blank", "noopener"); else if (mcp) load(false); });
 window.addEventListener("hashchange", () => { const t = location.hash.slice(1); if (TABS.some((x) => x[0] === t) && t !== S.tab) { S.tab = t; store.set("tab", t); renderChrome(); renderView(); } });
 document.addEventListener("keydown", (e) => {
   if (e.metaKey || e.ctrlKey || e.altKey) return;
@@ -2141,7 +2143,10 @@ renderChrome(); renderView();
   if (cached && cached.atomi) { S.raw = cached; buildData(cached); rebuildLinks(); S.status = "ready"; S.stale = true; S.loadedAt = new Date(cached.t || Date.now()); renderAll(); }
   try { mcp = window.claude && window.claude.use ? await window.claude.use("mcp") : null; } catch (e) { mcp = null; }
   /* fuori da Claude non c'è il connettore Notion: si leggono i JSON esportati in data/ */
-  if (!mcp) STATIC = true;
+  if (!mcp) {
+    STATIC = true;
+    const b = $("#reload"); b.textContent = "Aggiorna da Notion"; b.title = "Apre GitHub: premi «Run workflow»; dopo circa un minuto ricarica la pagina";
+  }
   load(false);
 })();
 window.__studio = { S, D, B, L, G, CR, persistLater, computeAudit, buildGraph, parseLinks, toks, labelMatches, md, linkify, orderAtoms, reportMd };

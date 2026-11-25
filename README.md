@@ -19,7 +19,7 @@ I livelli 1–5 delle flashcard si salvano sempre nel browser (`localStorage`), 
 4. **GitHub Pages.** Settings > Pages > Source: **GitHub Actions**.
 5. **Prima esportazione.** Scheda Actions > «Esporta da Notion e pubblica» > Run workflow.
 
-Poi il workflow gira ogni 3 ore e a ogni push su `main`. Rileggere solo le pagine modificate è il comportamento predefinito; «full» le rilegge tutte.
+Poi il workflow gira ogni ora e a ogni push su `main`. Rileggere solo le pagine modificate è il comportamento predefinito; «full» le rilegge tutte.
 
 ## Esportazione in locale
 
