@@ -135,6 +135,10 @@ nav.tabs .badge { background:var(--bad); color:#fff; border-radius:999px; font-s
 .glyph.b { background:color-mix(in srgb, var(--s2) 20%, var(--surface)); box-shadow:inset 0 0 0 1.5px var(--s2); }
 .glyph.none { font-size:0; }
 .glyph svg { display:block; }
+.tdot { display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:8px; vertical-align:middle; position:relative; top:-1px; background:var(--tc); box-shadow:0 0 0 1.5px color-mix(in srgb, var(--tc) 35%, transparent); }
+:root[data-theme="light"] .tdot { filter:brightness(.72) saturate(1.1); }
+@media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) .tdot { filter:brightness(.72) saturate(1.1); } }
+.tdot-m { display:none; } @media (max-width:640px) { .bk .tdot-m { display:inline-block; } }
 .note { font-size:.8rem; color:var(--muted); margin:0; }
 
 /* layout with rail */
@@ -387,9 +391,13 @@ const TICON = {
   Metodo: SV('<path d="M2.8 11.6 6 6.6l4 3.2 3.2-5.2"/><g fill="currentColor" stroke="none"><circle cx="2.8" cy="11.6" r="1.2"/><circle cx="6" cy="6.6" r="1.2"/><circle cx="10" cy="9.8" r="1.2"/><circle cx="13.2" cy="4.6" r="1.2"/></g>') /* una costellazione: passi in sequenza */
 };
 const tipoIco = (t) => TICON[t] || EMO[t] || "";
+/* colori per tipologia: unica fonte per grafo, pallini della tabella e filtri (pensati per il cielo scuro; nel tema chiaro si scuriscono) */
+const TCOL = { Definizione: "#7cc9ff", Concetto: "#b07cff", Teoria: "#f0c050", Metodo: "#ff6f91" }, TCOL_ALT = "#9db3ff";
+const tcolOf = (tipo) => TCOL[tipo] || TCOL_ALT;
+const tdot = (tipo, cls) => '<span class="tdot' + (cls ? " " + cls : "") + '" style="--tc:' + tcolOf(tipo) + '" aria-hidden="true"></span>';
 const emojiOf = (t) => (String(t || "").match(/\p{Extended_Pictographic}(?:\uFE0F|\u200D\p{Extended_Pictographic})*/u) || [""])[0];
 const TTL = 7 * 864e5, TTL_BOIL = 12 * 36e5, CONC = 4, WEAK_N = 20, LIST_STEP = 120;
-const TABS = [["corsi", "Galassie"], ["atomi", "Atomi"], ["grafo", "Cosmo"], ["flash", "Flashcard"], ["qualita", "Qualità"]];
+const TABS = [["corsi", "Galassie"], ["atomi", "Atomi"], ["grafo", "Cosmo"], ["flash", "Esplora"], ["qualita", "Qualità"]];
 
 /* ============ utilità ============ */
 const $ = (s) => document.querySelector(s);
@@ -971,7 +979,7 @@ function tipoPicker() {
   const lab = !sel.size ? "Tutte" : sel.size === 1 ? [...sel][0] : sel.size + " tipologie";
   return '<details class="cpick" id="tpick"><summary><span class="k">Tipologia</span><span class="v">' + esc(lab) + '</span></summary><div class="cpanel" role="group" aria-label="Tipologie da mostrare">' +
     '<label class="call"><input type="checkbox" data-pt="*"' + (!sel.size ? " checked" : "") + "><span>Tutte le tipologie</span></label>" +
-    tipi.map((t) => '<label><input type="checkbox" data-pt="' + esc(t) + '"' + (sel.has(t) ? " checked" : "") + '><span class="lemo">' + tipoIco(t) + "</span><span>" + esc(t) + '</span><span class="c">' + tc.get(t) + "</span></label>").join("") + "</div></details>";
+    tipi.map((t) => '<label><input type="checkbox" data-pt="' + esc(t) + '"' + (sel.has(t) ? " checked" : "") + '><span class="lemo">' + tdot(t) + "</span><span>" + esc(t) + '</span><span class="c">' + tc.get(t) + "</span></label>").join("") + "</div></details>";
 }
 /* riga dei filtri attivi, sempre visibile quando qualcosa restringe la vista */
 function renderFline() {
@@ -1089,7 +1097,7 @@ function renderAList() {
   const el = $("#alist"); if (!el) return;
   const list = listAtoms(), total = list.length;
   const th = (k, lab, cls) => '<th' + (cls ? ' class="' + cls + '"' : "") + '><button type="button" data-act="sort" data-v="' + k + '" aria-pressed="' + (S.sort === k) + '">' + lab + (S.sort === k ? (S.dir > 0 ? " ▴" : " ▾") : "") + "</button></th>";
-  const row = (a) => '<tr tabindex="0" data-act="atom" data-id="' + a.id + '"><td class="t">' + glyph(a) + titleHtml(a.titolo) + '</td><td class="opt-col">' + esc(a.tipo) + '</td><td class="opt-col">' + esc(corsiNames(a).join(", ")) + '</td><td>' + (a.valid ? '<span class="tag ok">Validato</span>' : '<span class="tag warn">Bollitore</span>') + "</td></tr>";
+  const row = (a) => '<tr tabindex="0" data-act="atom" data-id="' + a.id + '"><td class="t">' + tdot(a.tipo, "tdot-m") + titleHtml(a.titolo) + '</td><td class="opt-col">' + tdot(a.tipo) + esc(a.tipo) + '</td><td class="opt-col">' + esc(corsiNames(a).join(", ")) + '</td><td>' + (a.valid ? '<span class="tag ok">Validato</span>' : '<span class="tag warn">Bollitore</span>') + "</td></tr>";
   let groups;
   if (S.group === "none") groups = [["", list]];
   else {
@@ -1360,7 +1368,7 @@ V.grafo = () => {
   const tools = "" +
     (cov < scope.length && !CR.running ? '<button class="ghost sm" type="button" data-act="crawl">Leggi i collegamenti (' + (scope.length - cov) + ")</button>" : "");
   return '<div class="stack">' + (tools ? '<div><div class="gtools">' + lit + tools + "</div></div>" : "") +
-    '<div class="gpair" id="gpair" role="status" hidden></div><div class="gwrap" id="gw" role="img" aria-label="Cosmo: il grafo dei collegamenti tra atomi"><canvas id="gc"></canvas><div class="glegend"><span><span class="glyph none"></span>validato</span><span><span class="glyph b none"></span>bollitore</span>' +
+    '<div class="gpair" id="gpair" role="status" hidden></div><div class="gwrap" id="gw" role="img" aria-label="Cosmo: il grafo dei collegamenti tra atomi"><canvas id="gc"></canvas><div class="glegend">' + Object.keys(TCOL).map((t) => '<span>' + tdot(t) + t + '</span>').join("") + '<span style="opacity:.75">pieno validato · tenue tratteggiato bollitore</span>' +
     '</div><div class="gtip" id="gtip" hidden></div><div class="gempty" id="gempty" hidden></div></div>' +
     '<p class="gcmd">' + (f ? "Sotto i prerequisiti, sopra i dipendenti · " : "") +
     "Passa sopra: anteprima · Clic: seleziona e mostra i collegamenti · Doppio clic: apre la scheda (al tocco: tocca di nuovo l'atomo) · Clic sul vuoto: deseleziona" +
@@ -1532,10 +1540,11 @@ function showTip(n, e) {
 function hideTip() { const t = $("#gtip"); if (t) t.hidden = true; }
 /* ---- stile «spaziale» (tema scuro) ----
    Le immagini che servono sono disegnate una volta e poi solo copiate, così il grafo resta veloce. */
-function haloSprite(valid) {
-  const key = "h" + valid; let c = G.spr.get(key); if (c) return c;
+const shadeT = (c) => G.dark ? c : "rgb(" + [1, 3, 5].map((i) => Math.round(parseInt(c.substr(i, 2), 16) * 0.72)).join(",") + ")";
+function haloSprite(valid, tc) {
+  const key = "h" + valid + tc; let c = G.spr.get(key); if (c) return c;
   c = document.createElement("canvas"); c.width = c.height = 96;
-  const x = c.getContext("2d"), col = valid ? G.col.s1 : G.col.s2, g = x.createRadialGradient(48, 48, 0, 48, 48, 48);
+  const x = c.getContext("2d"), col = tc, g = x.createRadialGradient(48, 48, 0, 48, 48, 48);
   [[0, 1], [0.18, 0.62], [0.4, 0.24], [0.68, 0.07], [1, 0]].forEach(([s, a]) => g.addColorStop(s, rgba(col, a)));
   x.fillStyle = g; x.fillRect(0, 0, 96, 96); G.spr.set(key, c); return c;
 }
@@ -1583,7 +1592,7 @@ function buildHaze(sig, now) {
   const m = 120, u = Math.max(5, (Math.max(x1 - x0, y1 - y0) + 2 * m) / 640), w = Math.ceil((x1 - x0 + 2 * m) / u), h = Math.ceil((y1 - y0 + 2 * m) / u);
   const old = G.hz && G.hz.c, c = old && old.width === w && old.height === h ? old : Object.assign(document.createElement("canvas"), { width: w, height: h }), x = c.getContext("2d");
   x.clearRect(0, 0, w, h); const ox = x0 - m, oy = y0 - m;
-  for (const n of G.nodes) { const v = n.a.valid, R = (n.r * 2.4 + 24) / u; x.globalAlpha = v ? 0.26 : 0.22; x.drawImage(haloSprite(v), (n.x - ox) / u - R, (n.y - oy) / u - R, 2 * R, 2 * R); }
+  for (const n of G.nodes) { const v = n.a.valid, R = (n.r * 2.4 + 24) / u; x.globalAlpha = v ? 0.26 : 0.22; x.drawImage(haloSprite(v, tcolOf(n.a.tipo)), (n.x - ox) / u - R, (n.y - oy) / u - R, 2 * R, 2 * R); }
   return { c, x0: ox, y0: oy, u, w, h, sig, t: now, ver: G.ver };
 }
 function drawHaze(ctx) {
@@ -1743,25 +1752,27 @@ function drawNow() {
   for (const n of G.nodes) {
     let rs = Math.min(n.r * k, capR(n)); rs = Math.max(rs, 2); /* stessa logica nei due grafi: le stelle scalano con lo zoom, con un minimo che le tiene visibili */ if (P && n.id === f) rs = Math.max(rs * 1.3, 6); else if (P && P.dist.get(n.id) <= 1) rs = Math.max(rs, 4); n.rw = rs / k;
     if (!vis(n)) continue;
-    const a = alphaOf(n), key = (n.a.valid ? 1 : 0) + "|" + Math.round(a * 20) / 20;
+    const a = alphaOf(n), key = (n.a.valid ? 1 : 0) + "|" + Math.round(a * 20) / 20 + "|" + (n.a.tipo || "");
     (dots.get(key) || dots.set(key, []).get(key)).push(n);
     if (G.dark && a > 0.04) glow.push([n, a, rs]);
   }
   if (G.dark) {
     ctx.globalCompositeOperation = "lighter";
-    for (const [n, a, rs] of glow) { const v = n.a.valid, R = (rs * 2.3 + 3.5) / k; ctx.globalAlpha = a * (v ? 0.72 : 0.58); ctx.drawImage(haloSprite(v), n.x - R, n.y - R, 2 * R, 2 * R); }
+    for (const [n, a, rs] of glow) { const v = n.a.valid, R = (rs * 2.3 + 3.5) / k; ctx.globalAlpha = a * (v ? 0.72 : 0.58); ctx.drawImage(haloSprite(v, tcolOf(n.a.tipo)), n.x - R, n.y - R, 2 * R, 2 * R); }
     for (const [n, a, rs] of glow) { if (!G.spk || !G.spk.has(n.id) || rs < 3 || a < 0.3) continue; const L = (rs * 5.5 + 8) / k; ctx.globalAlpha = a * 0.5; ctx.drawImage(spikeSprite(), n.x - L, n.y - L, 2 * L, 2 * L); }
     ctx.globalCompositeOperation = "source-over";
   }
   /* ogni stella: filo del colore del fondo (la stacca dalle vicine), disco pieno e orlo chiaro */
   const kl = 1.3 / k;
+  /* colore = tipologia; stato = segno: validato disco pieno con orlo netto e punto luminoso, bollitore più tenue con orlo tratteggiato */
   dots.forEach((arr, key) => {
-    const [v, a] = key.split("|"); ctx.globalAlpha = +a;
+    const [v, a, tp] = key.split("|"), tc = shadeT(tcolOf(tp)), val = v === "1"; ctx.globalAlpha = +a;
     ctx.beginPath(); for (const n of arr) { ctx.moveTo(n.x + n.rw + kl, n.y); ctx.arc(n.x, n.y, n.rw + kl, 0, 2 * Math.PI); } ctx.fillStyle = col.surf; ctx.fill();
     ctx.beginPath(); for (const n of arr) { ctx.moveTo(n.x + n.rw, n.y); ctx.arc(n.x, n.y, n.rw, 0, 2 * Math.PI); }
-    ctx.fillStyle = v === "1" ? col.s1 : col.s2; ctx.fill();
-    if (G.dark) { ctx.beginPath(); for (const n of arr) { if (n.rw * k < 2.5) continue; const r = n.rw - 0.6 / k; ctx.moveTo(n.x + r, n.y); ctx.arc(n.x, n.y, r, 0, 2 * Math.PI); }
-      ctx.strokeStyle = v === "1" ? col.s1r : col.s2r; ctx.lineWidth = 0.9 / k; ctx.stroke(); }
+    ctx.fillStyle = tc; ctx.globalAlpha = +a * (val ? 1 : 0.5); ctx.fill(); ctx.globalAlpha = +a;
+    ctx.beginPath(); for (const n of arr) { if (n.rw * k < 2.5) continue; const r = n.rw - 0.6 / k; ctx.moveTo(n.x + r, n.y); ctx.arc(n.x, n.y, r, 0, 2 * Math.PI); }
+    ctx.strokeStyle = tc; ctx.lineWidth = (val ? 1.1 : 0.9) / k; if (!val) ctx.setLineDash([2.2 / k, 1.8 / k]); ctx.stroke(); ctx.setLineDash([]);
+    if (val && G.dark) { ctx.beginPath(); for (const n of arr) { if (n.rw * k < 2.5) continue; const r = n.rw * 0.45; ctx.moveTo(n.x + r, n.y); ctx.arc(n.x, n.y, r, 0, 2 * Math.PI); } ctx.fillStyle = "rgba(255,255,255,0.55)"; ctx.fill(); }
   });
   ctx.globalAlpha = 1;
   for (const [n, v, I] of flashes) {
@@ -1769,12 +1780,11 @@ function drawNow() {
     const bump = Math.sin(Math.PI * Math.min(1, v * 1.15)), r = n.rw * (1 + 0.28 * bump * I) , R = (n.rw * k * 3.6 + 8) / k;
     if (G.dark) {
       ctx.save(); ctx.globalCompositeOperation = "lighter";
-      ctx.globalAlpha = 0.75 * bump * I; ctx.drawImage(haloSprite(n.a.valid), n.x - R, n.y - R, 2 * R, 2 * R);
+      ctx.globalAlpha = 0.75 * bump * I; ctx.drawImage(haloSprite(n.a.valid, tcolOf(n.a.tipo)), n.x - R, n.y - R, 2 * R, 2 * R);
       const L = (n.rw * k * 5 + 14) / k; ctx.globalAlpha = 0.85 * (1 - v) * I; ctx.drawImage(spikeSprite(), n.x - L, n.y - L, 2 * L, 2 * L);
       ctx.restore();
     }
-    ctx.globalAlpha = 1; ctx.beginPath(); ctx.arc(n.x, n.y, r, 0, 2 * Math.PI); ctx.fillStyle = G.dark ? (n.a.valid ? col.s1c : col.s2c) : (n.a.valid ? col.s1 : col.s2); ctx.fill();
-    if (G.dark) { ctx.lineWidth = 0.9 / k; ctx.strokeStyle = n.a.valid ? col.s1r : col.s2r; ctx.stroke(); }
+    ctx.globalAlpha = 1; ctx.beginPath(); ctx.arc(n.x, n.y, r, 0, 2 * Math.PI); ctx.fillStyle = shadeT(tcolOf(n.a.tipo)); ctx.fill();
   }
   const ring = (n, c, wd) => { ctx.beginPath(); ctx.arc(n.x, n.y, n.rw + 3 / k, 0, 2 * Math.PI); ctx.strokeStyle = c; ctx.lineWidth = wd / k; ctx.stroke(); };
   if (f) { const c = G.nodes.find((n) => n.id === f); if (c) ring(c, col.accent, 2.2); }
