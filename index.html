@@ -397,7 +397,7 @@ const tcolOf = (tipo) => TCOL[tipo] || TCOL_ALT;
 const tdot = (tipo, cls) => '<span class="tdot' + (cls ? " " + cls : "") + '" style="--tc:' + tcolOf(tipo) + '" aria-hidden="true"></span>';
 const emojiOf = (t) => (String(t || "").match(/\p{Extended_Pictographic}(?:\uFE0F|\u200D\p{Extended_Pictographic})*/u) || [""])[0];
 const TTL = 7 * 864e5, TTL_BOIL = 12 * 36e5, CONC = 4, WEAK_N = 20, LIST_STEP = 120;
-const TABS = [["corsi", "Galassie"], ["atomi", "Atomi"], ["grafo", "Cosmo"], ["flash", "Esplora"], ["qualita", "Qualità"]];
+const TABS = [["corsi", "Galassie"], ["atomi", "Atomi"], ["grafo", "Cosmo"], ["flash", "Esplora"], ["qualita", "Osservatorio"]];
 
 /* ============ utilità ============ */
 const $ = (s) => document.querySelector(s);
@@ -1078,7 +1078,7 @@ function coursePage(c) {
     '<div class="stats"><div class="stat"><span class="k">Atomi</span><span class="v tn">' + vis.length + '</span></div><div class="stat"><span class="k">Sezioni</span><span class="v tn">' + secs.filter((s) => s.atoms.some((a) => okA(a) && a.corsi.includes(c.id))).length +
     '</span></div><div class="stat"><span class="k">Risorse</span><span class="v tn">' + c.risorse.length + '</span></div><div class="stat"><span class="k">Livello medio</span><span class="v tn">' + avg.toFixed(1).replace(".", ",") + "<small> / 5</small></span></div></div>" +
     (vis.length ? '<div class="bar" role="img" aria-label="Distribuzione per livello">' + [1, 2, 3, 4, 5].map((k) => d[k] ? '<i style="flex:' + d[k] + ';background:var(--lv' + k + ')"></i>' : "").join("") + "</div>" : "") + "</div>" +
-    '<section><h2 class="sec">Percorso</h2>' + (L.out.size ? '<p class="note">Dentro ogni sezione gli atomi seguono i collegamenti: prima ciò che viene citato, poi chi lo usa.</p>' : '<p class="note">Ordine provvisorio per tipologia. Apri la scheda Grafo o Qualità per leggere i collegamenti: l\'ordine diventerà per dipendenza.</p>') + html + "</section>" +
+    '<section><h2 class="sec">Percorso</h2>' + (L.out.size ? '<p class="note">Dentro ogni sezione gli atomi seguono i collegamenti: prima ciò che viene citato, poi chi lo usa.</p>' : '<p class="note">Ordine provvisorio per tipologia. Apri la scheda Cosmo o Osservatorio per leggere i collegamenti: l\'ordine diventerà per dipendenza.</p>') + html + "</section>" +
     '<section><h2 class="sec">Risorse</h2>' + risorse + "</section></div>";
 }
 
