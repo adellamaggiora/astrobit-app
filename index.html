@@ -304,7 +304,7 @@ mjx-assistive-mml { position:absolute !important; top:0; left:0; clip:rect(1px,1
 .glegend .glyph { width:10px; height:10px; margin-right:7px; vertical-align:-1px; background:var(--s1); box-shadow:none; } .glegend .glyph.b { background:var(--s2); }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .glegend .glyph { box-shadow:0 0 7px 2px color-mix(in srgb, var(--s1) 55%, transparent); } :root:not([data-theme="light"]) .glegend .glyph.b { box-shadow:0 0 7px 2px color-mix(in srgb, var(--s2) 55%, transparent); } }
 .glegend { position:absolute; right:10px; top:10px; background:color-mix(in srgb, var(--paper) 80%, transparent); border-radius:6px; padding:6px 8px; font-size:.76rem; color:var(--muted); display:flex; flex-direction:column; gap:3px; }
-.glegend span { display:flex; align-items:center; }
+.glegend span { display:flex; align-items:center; } .glegend .lg { color:var(--ink); } .glegend .lg svg { width:13px; height:13px; margin-right:7px; flex:none; }
 @media (max-width:640px) { .glegend { right:6px; left:6px; top:auto; bottom:44px; flex-direction:row; flex-wrap:wrap; gap:2px 12px; padding:6px 8px; font-size:.7rem; } .gstat { left:6px; bottom:6px; } .gwrap { height:min(72vh,720px); min-height:440px; } }
 /* selettore dei corsi e filtro del grafo */
 .cpick { position:relative; } .cpick.r .cpanel { left:auto; right:0; }
@@ -1368,7 +1368,7 @@ V.grafo = () => {
   const tools = "" +
     (cov < scope.length && !CR.running ? '<button class="ghost sm" type="button" data-act="crawl">Leggi i collegamenti (' + (scope.length - cov) + ")</button>" : "");
   return '<div class="stack">' + (tools ? '<div><div class="gtools">' + lit + tools + "</div></div>" : "") +
-    '<div class="gpair" id="gpair" role="status" hidden></div><div class="gwrap" id="gw" role="img" aria-label="Cosmo: il grafo dei collegamenti tra atomi"><canvas id="gc"></canvas><div class="glegend">' + Object.keys(TCOL).map((t) => '<span>' + tdot(t) + t + '</span>').join("") + '<span style="opacity:.75">pieno validato · tenue tratteggiato bollitore</span>' +
+    '<div class="gpair" id="gpair" role="status" hidden></div><div class="gwrap" id="gw" role="img" aria-label="Cosmo: il grafo dei collegamenti tra atomi"><canvas id="gc"></canvas><div class="glegend">' + Object.keys(TCOL).map((t) => '<span class="lg">' + (TICON[t] || "") + t + '</span>').join("") +
     '</div><div class="gtip" id="gtip" hidden></div><div class="gempty" id="gempty" hidden></div></div>' +
     '<p class="gcmd">' + (f ? "Sotto i prerequisiti, sopra i dipendenti · " : "") +
     "Passa sopra: anteprima · Clic: seleziona e mostra i collegamenti · Doppio clic: apre la scheda (al tocco: tocca di nuovo l'atomo) · Clic sul vuoto: deseleziona" +
