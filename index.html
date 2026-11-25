@@ -1583,7 +1583,7 @@ function buildHaze(sig, now) {
   const m = 120, u = Math.max(5, (Math.max(x1 - x0, y1 - y0) + 2 * m) / 640), w = Math.ceil((x1 - x0 + 2 * m) / u), h = Math.ceil((y1 - y0 + 2 * m) / u);
   const old = G.hz && G.hz.c, c = old && old.width === w && old.height === h ? old : Object.assign(document.createElement("canvas"), { width: w, height: h }), x = c.getContext("2d");
   x.clearRect(0, 0, w, h); const ox = x0 - m, oy = y0 - m;
-  for (const n of G.nodes) { const v = n.a.valid, R = (n.r * 2.4 + 24) / u; x.globalAlpha = 0.26; x.drawImage(haloSprite(v, tcolOf(n.a.tipo)), (n.x - ox) / u - R, (n.y - oy) / u - R, 2 * R, 2 * R); }
+  for (const n of G.nodes) { const v = n.a.valid, R = (n.r * 2.0 + 13) / u; x.globalAlpha = 0.2; x.drawImage(haloSprite(v, tcolOf(n.a.tipo)), (n.x - ox) / u - R, (n.y - oy) / u - R, 2 * R, 2 * R); }
   return { c, x0: ox, y0: oy, u, w, h, sig, t: now, ver: G.ver };
 }
 function drawHaze(ctx) {
@@ -1749,7 +1749,7 @@ function drawNow() {
   }
   if (G.dark) {
     ctx.globalCompositeOperation = "lighter";
-    for (const [n, a, rs] of glow) { const v = n.a.valid, R = (rs * 2.3 + 3.5) / k; ctx.globalAlpha = a * 0.72; ctx.drawImage(haloSprite(v, tcolOf(n.a.tipo)), n.x - R, n.y - R, 2 * R, 2 * R); }
+    for (const [n, a, rs] of glow) { const v = n.a.valid, R = (rs * 2.0 + 3) / k; ctx.globalAlpha = a * 0.62; ctx.drawImage(haloSprite(v, tcolOf(n.a.tipo)), n.x - R, n.y - R, 2 * R, 2 * R); }
     for (const [n, a, rs] of glow) { if (!G.spk || !G.spk.has(n.id) || rs < 3 || a < 0.3) continue; const L = (rs * 5.5 + 8) / k; ctx.globalAlpha = a * 0.5; ctx.drawImage(spikeSprite(), n.x - L, n.y - L, 2 * L, 2 * L); }
     ctx.globalCompositeOperation = "source-over";
   }
