@@ -31,7 +31,7 @@
     --accent:#9DB3FF; --accent-ink:#0E1117; --accent-soft:#1D2540;
     --lv1:#2A3350; --lv2:#3B4B80; --lv3:#5870BD; --lv4:#7F97E0; --lv5:#B3C3FF;
     --ok:#7FD1A6; --ok-bg:#16291F; --warn:#E8C171; --warn-bg:#2B2210; --bad:#F2A0A3; --bad-bg:#2E1618;
-    --s1:#3987e5; --s2:#d95926; --edge:rgba(150,170,214,.30); --edge-hi:#EFCB86;
+    --s1:#3987e5; --s2:#d95926; --edge:rgba(150,170,214,.30); --edge-hi:#BFE0FF;
   }
 }
 * { box-sizing:border-box; }
@@ -128,13 +128,6 @@ nav.tabs .badge { background:var(--bad); color:#fff; border-radius:999px; font-s
 .dots { display:inline-flex; gap:3px; vertical-align:middle; }
 .dots i { width:8px; height:8px; border-radius:50%; border:1px solid var(--accent); }
 .dots i.on { background:var(--accent); }
-/* icona atomo: emoji della tipologia (come su Notion) su un cerchio; il colore del cerchio dice se è validato */
-.glyph { display:inline-flex; align-items:center; justify-content:center; width:20px; height:20px; margin-right:7px; vertical-align:middle; position:relative; top:-2px; border-radius:50%; flex:none;
-  font-size:11px; line-height:1; color:var(--ink); font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;
-  background:color-mix(in srgb, var(--s1) 20%, var(--surface)); box-shadow:inset 0 0 0 1.5px var(--s1); }
-.glyph.b { background:color-mix(in srgb, var(--s2) 20%, var(--surface)); box-shadow:inset 0 0 0 1.5px var(--s2); }
-.glyph.none { font-size:0; }
-.glyph svg { display:block; }
 .tdot { display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:8px; vertical-align:middle; position:relative; top:-1px; background:var(--tc); box-shadow:0 0 0 1.5px color-mix(in srgb, var(--tc) 35%, transparent); }
 :root[data-theme="light"] .tdot { filter:brightness(.72) saturate(1.1); }
 @media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) .tdot { filter:brightness(.72) saturate(1.1); } }
@@ -301,8 +294,6 @@ mjx-assistive-mml { position:absolute !important; top:0; left:0; clip:rect(1px,1
 .gtools { display:flex; flex-wrap:wrap; gap:8px 16px; align-items:center; margin-bottom:10px; font-size:.875rem; }
 .gtip { position:absolute; pointer-events:none; background:var(--ink); color:var(--paper); padding:5px 9px; border-radius:4px; font-size:.8rem; max-width:260px; z-index:5; line-height:1.35; }
 .gstat { position:absolute; left:10px; bottom:10px; background:color-mix(in srgb, var(--paper) 80%, transparent); border-radius:6px; padding:4px 6px; font-size:.78rem; color:var(--muted); max-width:calc(100% - 20px); }
-.glegend .glyph { width:10px; height:10px; margin-right:7px; vertical-align:-1px; background:var(--s1); box-shadow:none; } .glegend .glyph.b { background:var(--s2); }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .glegend .glyph { box-shadow:0 0 7px 2px color-mix(in srgb, var(--s1) 55%, transparent); } :root:not([data-theme="light"]) .glegend .glyph.b { box-shadow:0 0 7px 2px color-mix(in srgb, var(--s2) 55%, transparent); } }
 .glegend { position:absolute; right:10px; top:10px; background:color-mix(in srgb, var(--paper) 80%, transparent); border-radius:6px; padding:6px 8px; font-size:.76rem; color:var(--muted); display:flex; flex-direction:column; gap:3px; }
 .glegend span { display:flex; align-items:center; } .glegend .lg { color:var(--ink); } .glegend .lg svg { width:13px; height:13px; margin-right:7px; flex:none; }
 @media (max-width:640px) { .glegend { right:6px; left:6px; top:auto; bottom:44px; flex-direction:row; flex-wrap:wrap; gap:2px 12px; padding:6px 8px; font-size:.7rem; } .gstat { left:6px; bottom:6px; } .gwrap { height:min(72vh,720px); min-height:440px; } }
@@ -392,7 +383,7 @@ const TICON = {
 };
 const tipoIco = (t) => TICON[t] || EMO[t] || "";
 /* colori per tipologia: unica fonte per grafo, pallini della tabella e filtri (pensati per il cielo scuro; nel tema chiaro si scuriscono) */
-const TCOL = { Definizione: "#7cc9ff", Concetto: "#b07cff", Teoria: "#f0c050", Metodo: "#ff6f91" }, TCOL_ALT = "#9db3ff";
+const TCOL = { Definizione: "#ffe08a", Concetto: "#ff4f78", Teoria: "#4f86ff", Metodo: "#1fb86a" }, TCOL_ALT = "#b8bcc8";
 const tcolOf = (tipo) => TCOL[tipo] || TCOL_ALT;
 const tdot = (tipo, cls) => '<span class="tdot' + (cls ? " " + cls : "") + '" style="--tc:' + tcolOf(tipo) + '" aria-hidden="true"></span>';
 const emojiOf = (t) => (String(t || "").match(/\p{Extended_Pictographic}(?:\uFE0F|\u200D\p{Extended_Pictographic})*/u) || [""])[0];
@@ -646,7 +637,7 @@ function describeError(e) {
   const c = e && e.code, m = errText(e).slice(0, 220);
   switch (c) {
     case "export_missing": return { t: "Dati non ancora esportati", d: "Mancano data/data.json e data/bodies.json. Avvia il workflow «Esporta da Notion» dalla scheda Actions del repository, poi ricarica. In locale servi la cartella con un server HTTP (non con file://).", retry: true };
-    case "no_export": return { t: "Corpo non presente nell'esportazione", d: "Questo atomo non è nei dati esportati: rilancia l'esportazione da Notion.", retry: false };
+    case "no_export": return { t: "Corpo non presente nell'esportazione", d: "Questa stella non è nei dati esportati: rilancia l'esportazione da Notion.", retry: false };
     case "needs_reauth": return { t: "Connessione a Notion scaduta", d: "Riconnetti Notion da Impostazioni > Connettori in claude.ai, poi ricarica.", retry: false };
     case "server_not_connected": return { t: "Notion non è collegato", d: "Aggiungi il connettore Notion da Impostazioni > Connettori in claude.ai, poi ricarica.", retry: false };
     case "selection_required": return { t: "Scegli quale connettore Notion usare", d: "Hai più connettori Notion. Selezionane uno quando richiesto, poi riprova.", retry: true };
@@ -909,7 +900,7 @@ async function load(isRetry) {
 const dots = (n) => '<span class="dots" role="img" aria-label="Livello ' + n + ' di 5">' + [1, 2, 3, 4, 5].map((k) => '<i class="' + (k <= n ? "on" : "") + '"></i>').join("") + "</span>";
 const distr = (list) => { const d = [0, 0, 0, 0, 0, 0]; list.forEach((c) => d[c.livello]++); return d; };
 const miniBar = (list) => { const d = distr(list); return '<div class="mini" aria-hidden="true">' + [1, 2, 3, 4, 5].map((k) => d[k] ? '<i style="flex:' + d[k] + ';background:var(--lv' + k + ')"></i>' : "").join("") + "</div>"; };
-const tglyph = (tipo, valid, extra) => { const e = tipoIco(tipo); return '<span class="glyph' + (valid ? "" : " b") + (e ? "" : " none") + '" title="' + esc(tipo) + (valid ? "" : " · nel bollitore") + '"' + (extra || "") + ' aria-hidden="true">' + e + "</span>"; };
+const tglyph = (tipo, valid) => '<span class="tdot" style="--tc:' + tcolOf(tipo) + '" title="' + esc(tipo) + (valid ? "" : " · nel bollitore") + '" aria-hidden="true"></span>';
 const glyph = (a) => tglyph(a.tipo, a.valid);
 const corsiNames = (a) => a.corsi.map((id) => (D.corsi.get(id) || {}).nome).filter(Boolean);
 const sezNames = (a) => a.sezioni.map((id) => (D.sezioni.get(id) || {}).nome).filter(Boolean);
@@ -941,7 +932,7 @@ function renderChrome() {
   const c = ready ? srcCount("*") : { v: 0, b: 0 };
   /* stato degli atomi: una scelta sola, nella stessa forma a tendina degli altri filtri */
   const SO = [["val", "Solo validati", c.v], ["boil", "Solo bollitore", c.b], ["all", "Tutti", c.v + c.b]], cur = SO.find((o) => o[0] === S.src) || SO[0];
-  $("#srcWrap").innerHTML = '<details class="cpick" id="spick"><summary><span class="k">Atomi</span><span class="v">' + cur[1] + '</span></summary><div class="cpanel" role="radiogroup" aria-label="Quali atomi usare">' +
+  $("#srcWrap").innerHTML = '<details class="cpick" id="spick"><summary><span class="k">Stelle</span><span class="v">' + cur[1] + '</span></summary><div class="cpanel" role="radiogroup" aria-label="Quali stelle usare">' +
     SO.map((o) => '<label><input type="radio" name="srcpick" data-ps="' + o[0] + '"' + (S.src === o[0] ? " checked" : "") + "><span>" + o[1] + "</span>" + (ready ? '<span class="c">' + o[2] + "</span>" : "") + "</label>").join("") +
     '<p class="note" style="padding:6px 8px 2px">Validati: con la revisione di Andrea e di Omar. Bollitore: in attesa di revisione.</p></div></details>';
   $("#corsoWrap").innerHTML = ready ? coursePicker() : "";
@@ -960,7 +951,7 @@ function renderChrome() {
     if (pend) { cls = "busy"; txt = "Salvataggio livelli"; } else if (err) { cls = "err"; txt = err + " livelli non salvati"; extra = ' <button class="linkbtn" type="button" data-act="retryWrites">Riprova</button>'; }
   }
   $("#pillWrap").innerHTML = '<span class="pill ' + cls + '"><i></i><span>' + esc(txt) + "</span>" + extra + "</span>";
-  $("#sub").textContent = ready ? D.atoms.size + " atomi · " + D.corsi.size + " corsi · " + D.sezioni.size + " sezioni · " + D.risorse.size + " risorse" + (S.loadedAt ? " · letto alle " + pad(S.loadedAt.getHours()) + ":" + pad(S.loadedAt.getMinutes()) + (S.stale ? " (cache)" : "") : "") : "Database atomi su Notion";
+  $("#sub").textContent = ready ? D.atoms.size + " stelle · " + D.corsi.size + " corsi · " + D.sezioni.size + " sezioni · " + D.risorse.size + " risorse" + (S.loadedAt ? " · letto alle " + pad(S.loadedAt.getHours()) + ":" + pad(S.loadedAt.getMinutes()) + (S.stale ? " (cache)" : "") : "") : "Database atomi su Notion";
   $("#tabs").innerHTML = TABS.map((t) => '<button type="button" role="tab" data-act="tab" data-v="' + t[0] + '" aria-selected="' + (S.tab === t[0]) + '">' + t[1] + "</button>").join("") + focusChipHtml();
 }
 function renderAll() { renderChrome(); renderView(); renderDrawer(); }
@@ -1016,7 +1007,7 @@ function syncFocusChip() {
 function renderView() {
   teardownGraph();
   const el = $("#view"); viewAfter = null; syncFocusChip();
-  if (S.status === "loading" && !D.atoms.size) { el.innerHTML = stateBox("Lettura del database", STATIC ? "Carico atomi, corsi, sezioni e risorse." : "Carico atomi, corsi, sezioni e risorse da Notion. Alla prima apertura Claude ti chiede il consenso per accedere a Notion."); return; }
+  if (S.status === "loading" && !D.atoms.size) { el.innerHTML = stateBox("Lettura del database", STATIC ? "Carico stelle, corsi, sezioni e risorse." : "Carico stelle, corsi, sezioni e risorse da Notion. Alla prima apertura Claude ti chiede il consenso per accedere a Notion."); return; }
   if (S.status === "nomcp" && !D.atoms.size) { el.innerHTML = stateBox("Notion non è disponibile in questa vista", "La pagina legge il database tramite i connettori di Claude. Aprila da claude.ai o dall'app Claude con il connettore Notion attivo."); return; }
   if (S.status === "error" && !D.atoms.size) { const d = describeError(S.err); el.innerHTML = stateBox(d.t, d.d, '<button class="' + (d.retry ? "solid" : "ghost") + '" type="button" data-act="retryLoad">' + (d.retry ? "Riprova" : "Ricarica") + "</button>"); return; }
   const v = V[S.tab] || V.corsi;
@@ -1033,7 +1024,7 @@ function coursesGrid() {
   const sel = selCorsi();
   D.corsiList.forEach((c) => { if (sel.size && !sel.has(c.id)) return; const k = c.anno == null ? "Altri" : "Anno " + c.anno; (groups.get(k) || groups.set(k, []).get(k)).push(c); });
   const totals = srcCount("*");
-  return '<div class="stack"><div><h2 class="sec">Galassie</h2><p class="note">Contenuto mostrato: ' + (S.src === "val" ? "solo atomi validati da Andrea e Omar" : S.src === "all" ? "atomi validati e nel bollitore" : "solo atomi nel bollitore") +
+  return '<div class="stack"><div><h2 class="sec">Galassie</h2><p class="note">Contenuto mostrato: ' + (S.src === "val" ? "solo stelle validate da Andrea e Omar" : S.src === "all" ? "stelle validate e nel bollitore" : "solo stelle nel bollitore") +
     ". Il selettore in alto cambia la sorgente in tutta l'app. " + totals.v + " validati, " + totals.b + " nel bollitore.</p></div>" +
     [...groups.entries()].map(([k, list]) => '<section><h3 class="yearh">' + esc(k) + '</h3><div class="cgrid">' + list.map(courseCard).join("") + "</div></section>").join("") + "</div>";
 }
@@ -1041,7 +1032,7 @@ function courseCard(c) {
   const vis = c.atoms.filter(okA), n = srcCount(c.id), nsez = c.sezioni.filter((s) => s.atoms.some(okA)).length;
   const empty = !vis.length && !c.risorse.length;
   return '<button class="ccard' + (empty ? " empty" : "") + '" type="button" data-act="corso" data-v="' + c.id + '"><h3>' + esc(c.nome) + "</h3>" +
-    '<div class="meta"><span><b>' + vis.length + "</b> atomi</span><span><b>" + nsez + "</b> sezioni</span><span><b>" + c.risorse.length + "</b> risorse</span></div>" +
+    '<div class="meta"><span><b>' + vis.length + "</b> stelle</span><span><b>" + nsez + "</b> sezioni</span><span><b>" + c.risorse.length + "</b> risorse</span></div>" +
     (vis.length ? miniBar(vis) : "") +
     (S.src === "val" && n.b ? '<span class="note">+ ' + n.b + " nel bollitore</span>" : S.src === "boil" && n.v ? '<span class="note">' + n.v + " già validati</span>" : "") + "</button>";
 }
@@ -1049,7 +1040,7 @@ function atomRow(a) {
   /* atomi distinti citati (↗) e atomi distinti che lo citano (↙); L.inn contiene insiemi, non liste */
   const o = new Set(outLinks(a.id).map((l) => l.to)).size, i = [...(L.inn.get(a.id) || [])].filter((x) => x !== a.id && D.atoms.has(x)).length;
   return '<button class="arow" type="button" data-act="atom" data-id="' + a.id + '"><span class="t">' + glyph(a) + '<span class="tt">' + titleHtml(a.titolo) + "</span></span>" +
-    '<span class="x hid"' + (L.out.size ? ' title="Cita ' + o + (o === 1 ? " atomo" : " atomi") + " · citato da " + i + '"' : "") + ">" + (L.out.size ? o + " ↗ · " + i + " ↙" : "") + "</span><span>" + statoTag(a) + " " + dots(a.livello) + "</span></button>";
+    '<span class="x hid"' + (L.out.size ? ' title="Cita ' + o + (o === 1 ? " stella" : " stelle") + " · citato da " + i + '"' : "") + ">" + (L.out.size ? o + " ↗ · " + i + " ↙" : "") + "</span><span>" + statoTag(a) + " " + dots(a.livello) + "</span></button>";
 }
 function coursePage(c) {
   const vis = c.atoms.filter(okA);
@@ -1059,12 +1050,12 @@ function coursePage(c) {
   secs.forEach((s) => {
     const list = s.atoms.filter((a) => okA(a) && a.corsi.includes(c.id)); list.forEach((a) => inSec.add(a.id));
     if (!list.length) return;
-    html += '<details class="sect" open><summary><span>' + esc(s.nome) + '</span><span class="cnt">' + list.length + " atomi</span></summary>" + orderAtoms(list).map(atomRow).join("") + "</details>";
+    html += '<details class="sect" open><summary><span>' + esc(s.nome) + '</span><span class="cnt">' + list.length + " stelle</span></summary>" + orderAtoms(list).map(atomRow).join("") + "</details>";
   });
   const loose = vis.filter((a) => !inSec.has(a.id));
-  if (loose.length) html += '<details class="sect" open><summary><span>Senza sezione</span><span class="tag warn">da sistemare</span><span class="cnt">' + loose.length + " atomi</span></summary>" + orderAtoms(loose).map(atomRow).join("") + "</details>";
-  if (!vis.length && (S.tipi.size || aqN())) html = stateBox("Nessun atomo corrisponde ai filtri", "Togli la ricerca o la tipologia nella riga dei filtri attivi, in alto.");
-  else if (!vis.length) html = stateBox("Nessun atomo in questa sorgente", S.src === "val" ? "Questo corso non ha ancora atomi validati. Scegli «Tutti» nel filtro Atomi per vedere anche quelli in attesa di revisione." : "Nessun atomo corrisponde.");
+  if (loose.length) html += '<details class="sect" open><summary><span>Senza sezione</span><span class="tag warn">da sistemare</span><span class="cnt">' + loose.length + " stelle</span></summary>" + orderAtoms(loose).map(atomRow).join("") + "</details>";
+  if (!vis.length && (S.tipi.size || aqN())) html = stateBox("Nessuna stella corrisponde ai filtri", "Togli la ricerca o la tipologia nella riga dei filtri attivi, in alto.");
+  else if (!vis.length) html = stateBox("Nessuna stella in questa sorgente", S.src === "val" ? "Questo corso non ha ancora stelle validate. Scegli «Tutti» nel filtro Stelle per vedere anche quelle in attesa di revisione." : "Nessuna stella corrisponde.");
   const d = distr(vis), avg = vis.length ? vis.reduce((s, a) => s + a.livello, 0) / vis.length : 0;
   const rg = new Map(); c.risorse.forEach((r) => (rg.get(r.tipo) || rg.set(r.tipo, []).get(r.tipo)).push(r));
   const risorse = c.risorse.length ? [...rg.entries()].sort((a, b) => collator.compare(a[0], b[0])).map(([t, list]) =>
@@ -1075,10 +1066,10 @@ function coursePage(c) {
     '<button class="ghost" type="button" data-act="go" data-v="flash">Studia con le flashcard</button><button class="ghost" type="button" data-act="go" data-v="grafo">Cosmo della galassia</button>' +
     '<a class="ghost" style="text-decoration:none" href="' + esc(c.url) + '" target="_blank" rel="noopener">Apri in Notion</a></div></div>' +
     '<div><h2 class="sec" style="font-size:1.8rem">' + esc(c.nome) + (c.anno != null ? ' <small class="muted" style="font-size:.9rem">· anno ' + esc(c.anno) + "</small>" : "") + "</h2>" +
-    '<div class="stats"><div class="stat"><span class="k">Atomi</span><span class="v tn">' + vis.length + '</span></div><div class="stat"><span class="k">Sezioni</span><span class="v tn">' + secs.filter((s) => s.atoms.some((a) => okA(a) && a.corsi.includes(c.id))).length +
+    '<div class="stats"><div class="stat"><span class="k">Stelle</span><span class="v tn">' + vis.length + '</span></div><div class="stat"><span class="k">Sezioni</span><span class="v tn">' + secs.filter((s) => s.atoms.some((a) => okA(a) && a.corsi.includes(c.id))).length +
     '</span></div><div class="stat"><span class="k">Risorse</span><span class="v tn">' + c.risorse.length + '</span></div><div class="stat"><span class="k">Livello medio</span><span class="v tn">' + avg.toFixed(1).replace(".", ",") + "<small> / 5</small></span></div></div>" +
     (vis.length ? '<div class="bar" role="img" aria-label="Distribuzione per livello">' + [1, 2, 3, 4, 5].map((k) => d[k] ? '<i style="flex:' + d[k] + ';background:var(--lv' + k + ')"></i>' : "").join("") + "</div>" : "") + "</div>" +
-    '<section><h2 class="sec">Percorso</h2>' + (L.out.size ? '<p class="note">Dentro ogni sezione gli atomi seguono i collegamenti: prima ciò che viene citato, poi chi lo usa.</p>' : '<p class="note">Ordine provvisorio per tipologia. Apri la scheda Cosmo o Osservatorio per leggere i collegamenti: l\'ordine diventerà per dipendenza.</p>') + html + "</section>" +
+    '<section><h2 class="sec">Percorso</h2>' + (L.out.size ? '<p class="note">Dentro ogni sezione le stelle seguono i collegamenti: prima ciò che viene citato, poi chi lo usa.</p>' : '<p class="note">Ordine provvisorio per tipologia. Apri la scheda Cosmo o Osservatorio per leggere i collegamenti: l\'ordine diventerà per dipendenza.</p>') + html + "</section>" +
     '<section><h2 class="sec">Risorse</h2>' + risorse + "</section></div>";
 }
 
@@ -1114,10 +1105,10 @@ function renderAList() {
     if (g) body += '<tr class="grouph"><td colspan="4">' + esc(g) + " · " + items.length + "</td></tr>";
     for (const a of items) { if (shown >= S.limit) break; body += row(a); shown++; }
   }
-  $("#acount") && ($("#acount").textContent = total + (total === 1 ? " atomo" : " atomi"));
+  $("#acount") && ($("#acount").textContent = total + (total === 1 ? " stella" : " stelle"));
   el.innerHTML = total ? '<div class="bk-wrap"><table class="bk"><thead><tr>' + th("titolo", "Titolo") + th("tipo", "Tipo", "opt-col") + th("corso", "Corso", "opt-col") + th("stato", "Stato") + "</tr></thead><tbody>" + body + "</tbody></table></div>" +
     (shown < total ? '<p class="note" style="margin-top:10px"><button class="ghost" type="button" data-act="more">Mostra altri ' + Math.min(LIST_STEP, total - shown) + "</button> &nbsp;" + shown + " di " + total + "</p>" : "")
-    : stateBox("Nessun atomo", "Nessun atomo corrisponde ai filtri." + (selCorsi().size || S.tipi.size || aqN() ? " Puoi toglierli dalla riga dei filtri attivi, in alto." : "") + (S.src === "val" ? " Con «Tutti» nel filtro Atomi includi anche gli atomi non ancora validati." : ""));
+    : stateBox("Nessuna stella", "Nessuna stella corrisponde ai filtri." + (selCorsi().size || S.tipi.size || aqN() ? " Puoi toglierli dalla riga dei filtri attivi, in alto." : "") + (S.src === "val" ? " Con «Tutti» nel filtro Stelle includi anche le stelle non ancora validate." : ""));
   typeset(el);
 }
 const origAtomi = V.atomi;
@@ -1149,7 +1140,7 @@ function renderDrawer(keepScroll) {
     '<div class="dlinks">' + (outAtoms.length ? "<h4>Collega a</h4><ul>" + outAtoms.map((l) => { const t = D.atoms.get(l.to); return li(t); }).join("") + "</ul>" : "") +
     (inn.length ? "<h4>Citato da</h4><ul>" + inn.map(li).join("") + "</ul>" : "") +
     (outOther.length ? "<h4>Puntano fuori dal database atomi</h4><ul>" + outOther.map((l) => '<li><a class="ilink bad" href="https://www.notion.so/' + l.to + '" target="_blank" rel="noopener">' + esc(l.label || l.to) + "</a></li>").join("") + "</ul>" : "") + "</div>"
-    : (B.has(a.id) ? '<p class="note">Nessun collegamento ad altri atomi in questa pagina, e nessun atomo la cita.</p>' : "");
+    : (B.has(a.id) ? '<p class="note">Nessun collegamento ad altre stelle in questa pagina, e nessuna stella la cita.</p>' : "");
   el.hidden = false; sc.hidden = false;
   el.innerHTML = '<div class="dh"><div class="btnrow">' + (S.hist.length ? '<button class="ghost sm" type="button" data-act="back">‹ Indietro</button>' : "") + '</div><button class="ghost sm" type="button" data-act="closeDrawer" aria-label="Chiudi">Chiudi ✕</button></div>' +
     '<div class="db"><div class="dmeta"><span class="tag">' + esc(a.tipo) + "</span>" + (a.valid ? '<span class="tag ok">Validato</span>' : '<span class="tag warn">Bollitore</span>' + (a.andrea ? ' <span class="tag">Andrea ok</span>' : "") + (a.omar ? ' <span class="tag">Omar ok</span>' : "")) + (a.ai ? '<span class="tag">Revisione AI</span>' : "") + dots(a.livello) + "</div>" +
@@ -1214,7 +1205,7 @@ function buildGraph() {
   } else {
     const base = atomsIn({ text: false });
     if (aq) {
-      /* gli atomi trovati sono il punto di partenza; si mostrano anche quelli entro il massimo di archi */
+      /* le stelle trovate sono il punto di partenza; si mostrano anche quelli entro il massimo di archi */
       const ok = new Set(base.map((a) => a.id)), hit = base.filter((a) => aqMatch(a, aq)).map((a) => a.id);
       G.src = hit; G.fd = bfsChains(hit, S.g.dmax, "any", ok);
       atoms = [...G.fd.keys()].map((id) => D.atoms.get(id));
@@ -1286,7 +1277,7 @@ function rootBar(x, res) {
   const key = res ? x : "-"; if (G.rbKey === key) return; G.rbKey = key;
   /* sempre visibile in questa vista: il grafo non si sposta quando il riquadro cambia */
   el.hidden = false; el.classList.add("fixed");
-  if (!res) { G.shown = []; G.hiIdx = null; el.innerHTML = "<span>Punta un atomo per illuminare i percorsi più brevi tra lui e la radice. Il percorso resta illuminato finché non punti un altro atomo; un clic su uno spazio vuoto lo toglie.</span>"; return; }
+  if (!res) { G.shown = []; G.hiIdx = null; el.innerHTML = "<span>Punta una stella per illuminare i percorsi più brevi tra essa e la radice. Il percorso resta illuminato finché non punti un'altra stella; un clic su uno spazio vuoto lo toglie.</span>"; return; }
   const nm = (id) => "«" + esc(((D.atoms.get(id) || {}).plain || "").slice(0, 40)) + "»", r = S.g.focus;
   /* dalla radice verso l'atomo, nello stesso verso in cui si legge il grafo */
   const paths = res.parts.flatMap((p) => listPaths(p, 40).map((q) => (p.side === "up" ? q : q.slice().reverse())));
@@ -1330,8 +1321,8 @@ function renderPairBar() {
   el.hidden = false;
   const nm = (id) => "«" + esc(((D.atoms.get(id) || {}).plain || "").slice(0, 40)) + "»", how = { both: "seguendo prerequisiti e dipendenti", up: "seguendo solo i prerequisiti", down: "seguendo solo i dipendenti" }[S.g.dir];
   let t;
-  if (!P.a) t = "Mostra percorso: scegli il primo atomo. Quelli senza collegamenti sono attenuati.";
-  else if (!P.b) { const n = P.reach ? P.reach.size - 1 : 0, ma = S.g.dmax + (S.g.dmax === 1 ? " arco" : " archi"); t = n ? "Da " + nm(P.a) + ": scegli il secondo tra i <b>" + n + "</b> atomi raggiungibili entro " + ma + ", " + how + ". Gli altri sono attenuati." : "Da " + nm(P.a) + " non si raggiunge nessun atomo entro " + ma + ", " + how + ". Puoi aumentare «Max archi illuminati»."; }
+  if (!P.a) t = "Mostra percorso: scegli la prima stella. Quelli senza collegamenti sono attenuati.";
+  else if (!P.b) { const n = P.reach ? P.reach.size - 1 : 0, ma = S.g.dmax + (S.g.dmax === 1 ? " arco" : " archi"); t = n ? "Da " + nm(P.a) + ": scegli il secondo tra i <b>" + n + "</b> stelle raggiungibili entro " + ma + ", " + how + ". Gli altri sono attenuati." : "Da " + nm(P.a) + " non si raggiunge nessuna stella entro " + ma + ", " + how + ". Puoi aumentare «Max archi illuminati»."; }
   else if (P.res.D < 0) t = "Nessun percorso da " + nm(P.a) + " a " + nm(P.b) + ", " + how + ", con i filtri attuali.";
   else t = "<b>" + P.res.D + (P.res.D === 1 ? " arco" : " archi") + "</b>, " + P.res.count + (P.res.count === 1 ? " percorso più breve" : " percorsi più brevi") + ", " + how + ".";
   /* i percorsi trovati, uno per riga; ogni atomo apre la sua scheda */
@@ -1368,18 +1359,18 @@ V.grafo = () => {
   const tools = "" +
     (cov < scope.length && !CR.running ? '<button class="ghost sm" type="button" data-act="crawl">Leggi i collegamenti (' + (scope.length - cov) + ")</button>" : "");
   return '<div class="stack">' + (tools ? '<div><div class="gtools">' + lit + tools + "</div></div>" : "") +
-    '<div class="gpair" id="gpair" role="status" hidden></div><div class="gwrap" id="gw" role="img" aria-label="Cosmo: il grafo dei collegamenti tra atomi"><canvas id="gc"></canvas><div class="glegend">' + Object.keys(TCOL).map((t) => '<span class="lg">' + (TICON[t] || "") + t + '</span>').join("") +
+    '<div class="gpair" id="gpair" role="status" hidden></div><div class="gwrap" id="gw" role="img" aria-label="Cosmo: il grafo dei collegamenti tra stelle"><canvas id="gc"></canvas><div class="glegend">' + Object.keys(TCOL).map((t) => '<span class="lg">' + tdot(t) + t + '</span>').join("") +
     '</div><div class="gtip" id="gtip" hidden></div><div class="gempty" id="gempty" hidden></div></div>' +
     '<p class="gcmd">' + (f ? "Sotto i prerequisiti, sopra i dipendenti · " : "") +
-    "Passa sopra: anteprima · Clic: seleziona e mostra i collegamenti · Doppio clic: apre la scheda (al tocco: tocca di nuovo l'atomo) · Clic sul vuoto: deseleziona" +
+    "Passa sopra: anteprima · Clic: seleziona e mostra i collegamenti · Doppio clic: apre la scheda (al tocco: tocca di nuovo la stella) · Clic sul vuoto: deseleziona" +
     "</p></div>";
 };
 function crawlStatus(scope) {
   const cov = coverage(scope);
   if (CR.err) return "Lettura interrotta: " + describeError(CR.err).t;
   if (CR.running) return "Lettura dei collegamenti: " + CR.done + " / " + CR.total;
-  if (!mcp) return cov + " / " + scope.length + (STATIC ? " atomi con collegamenti nell'esportazione" : " atomi con collegamenti letti (cache)");
-  return cov >= scope.length ? "Collegamenti letti per tutti i " + scope.length + " atomi" + (CR.failed ? " (" + CR.failed + " non leggibili)" : "") : cov + " / " + scope.length + " atomi con collegamenti letti";
+  if (!mcp) return cov + " / " + scope.length + (STATIC ? " stelle con collegamenti nell'esportazione" : " stelle con collegamenti letti (cache)");
+  return cov >= scope.length ? "Collegamenti letti per tutte le " + scope.length + " stelle" + (CR.failed ? " (" + CR.failed + " non leggibili)" : "") : cov + " / " + scope.length + " stelle con collegamenti letti";
 }
 function updateCrawlUI() { const sc = S.tab === "qualita" ? atomsIn({ tipi: null, text: false }) : crawlTargets(); document.querySelectorAll("[data-crawl]").forEach((e) => { e.textContent = crawlStatus(sc); }); }
 async function initGraph() {
@@ -1387,7 +1378,7 @@ async function initGraph() {
   /* se la vista viene ridisegnata mentre d3 carica, vale solo l'ultima inizializzazione: niente gestori doppi */
   const seq = G.initSeq = (G.initSeq || 0) + 1;
   ensureCrawl();
-  try { await loadD3(); } catch (e) { gw.innerHTML = '<div class="box" style="border:0;height:100%">' + "<h3>Cosmo non disponibile</h3><p>Non riesco a caricare la libreria grafica (d3). Controlla la connessione e ricarica; la tabella nella scheda Atomi mostra gli stessi dati.</p></div>"; return; }
+  try { await loadD3(); } catch (e) { gw.innerHTML = '<div class="box" style="border:0;height:100%">' + "<h3>Cosmo non disponibile</h3><p>Non riesco a caricare la libreria grafica (d3). Controlla la connessione e ricarica; la tabella nella scheda Stelle mostra gli stessi dati.</p></div>"; return; }
   if (seq !== G.initSeq || $("#gw") !== gw || S.tab !== "grafo") return;
   const d3 = window.d3; readColors();
   G.cv = $("#gc"); G.ctx = G.cv.getContext("2d"); G.sel = null; G.lock = null; G.hover = null;
@@ -1406,8 +1397,8 @@ async function initGraph() {
   const cv = G.cv;
   cv.addEventListener("pointermove", (e) => { if (e.pointerType === "touch") return; const n = nodeAt(e); if (n !== G.hover) { G.hover = n; cv.style.cursor = n && pairSelectable(n) ? "pointer" : ""; draw(); } if (n) showTip(n, e); else hideTip(); });
   cv.addEventListener("pointerleave", () => { G.hover = null; hideTip(); draw(); });
-  /* passaggio = anteprima; clic su un atomo = lo seleziona (ne blocca i collegamenti); doppio clic = apre la scheda;
-     clic sul vuoto = deseleziona. Al tocco non c'è il doppio clic: il secondo tocco sull'atomo già selezionato apre la scheda */
+  /* passaggio = anteprima; clic su una stella = la seleziona (ne blocca i collegamenti); doppio clic = apre la scheda;
+     clic sul vuoto = deseleziona. Al tocco non c'è il doppio clic: il secondo tocco sulla stella già selezionata apre la scheda */
   let ptype = "mouse"; cv.addEventListener("pointerdown", (e) => { ptype = e.pointerType; });
   cv.addEventListener("click", (e) => {
     const n = nodeAt({ clientX: e.clientX, clientY: e.clientY, pointerType: ptype });
@@ -1465,7 +1456,7 @@ function startSim() {
     .force("x", d3.forceX((d) => anc.get(d.ck).x).strength(cl ? 0.13 : 0.035))
     .force("y", d3.forceY((d) => anc.get(d.ck).y).strength(cl ? 0.13 : 0.035));
   if (f && G.path) {
-    /* tre regioni: prerequisiti sopra, dipendenti sotto, cicli (atomi che sono entrambe le cose) nella fascia centrale.
+    /* tre regioni: prerequisiti sopra, dipendenti sotto, cicli (stelle che sono entrambe le cose) nella fascia centrale.
        Gli anelli restano la distanza in archi dalla radice. */
     const P = G.path, ring = 95, nb = P.cyc.size + P.rel.size, gap = nb ? Math.max(26, Math.sqrt(nb) * 14) : 14; /* fascia dei cicli più alta se sono tanti */
     G.gap = gap;
@@ -1476,7 +1467,7 @@ function startSim() {
         const a = n.reg === "up" ? Math.PI * (0.12 + 0.76 * (t / 6.2832)) : n.reg === "down" ? Math.PI * (1.12 + 0.76 * (t / 6.2832)) : t < 3.1416 ? 0 : Math.PI;
         n.x = Math.cos(a) * r; n.y = n.reg === "cyc" ? 0 : Math.sin(a) * r; }
     });
-    /* ogni atomo sta esattamente sul cerchio della sua distanza; la regione si impone limitando l'angolo:
+    /* ogni stella sta esattamente sul cerchio della sua distanza; la regione si impone limitando l'angolo:
        dipendenti sopra la fascia, prerequisiti sotto, correlati e cicli dentro la fascia */
     const region = () => { for (const n of nodes) {
       if (n.reg === "root") continue;
@@ -1499,11 +1490,11 @@ function startSim() {
   G.sim = sim; G.elinks = links; savePos(); fitView(f); drawNow();
   if (!big && !warm) sim.alpha(0.06).on("tick", draw).on("end", savePos).restart();
   const ge = $("#gempty");
-  if (ge) { ge.hidden = !!N; ge.innerHTML = N ? "" : "<h3>Nessun atomo da mostrare</h3><p>" + (G.filtered ? "Nessun atomo contiene «" + esc(S.aq.trim()) + "» con i filtri scelti. " : "") + "Puoi togliere i filtri dalla riga dei filtri attivi, in alto.</p>"; }
+  if (ge) { ge.hidden = !!N; ge.innerHTML = N ? "" : "<h3>Nessuna stella da mostrare</h3><p>" + (G.filtered ? "Nessuna stella contiene «" + esc(S.aq.trim()) + "» con i filtri scelti. " : "") + "Puoi togliere i filtri dalla riga dei filtri attivi, in alto.</p>"; }
   const gs = $("#gstat");
-  if (gs) gs.textContent = !N ? (G.filtered ? "Nessun atomo contiene «" + S.aq.trim() + "»" : "Nessun atomo da mostrare") :
+  if (gs) gs.textContent = !N ? (G.filtered ? "Nessuna stella contiene «" + S.aq.trim() + "»" : "Nessuna stella da mostrare") :
     (G.filtered ? G.src.length + " trovati" + (S.g.dmax ? " · " + (N - G.src.length) + (S.g.dmax >= 99 ? " collegati" : " entro " + S.g.dmax + (S.g.dmax === 1 ? " arco" : " archi")) : "") + " · " : N + " nodi · ") +
-    G.links.length + " collegamenti" + (G.isolated && !G.filtered ? " · " + G.isolated + " senza collegamenti" + (G.isoOut ? " (" + G.isoOut + " collegati solo ad atomi fuori da corso, sorgente o tipologia scelti)" : "") : "") + (!G.links.length && N ? " · nessun collegamento letto finora" : "");
+    G.links.length + " collegamenti" + (G.isolated && !G.filtered ? " · " + G.isolated + " senza collegamenti" + (G.isoOut ? " (" + G.isoOut + " collegati solo a stelle fuori da corso, sorgente o tipologia scelti)" : "") : "") + (!G.links.length && N ? " · nessun collegamento letto finora" : "");
 }
 function fitView(focusId) {
   const d3 = window.d3, ns = G.nodes; if (!ns.length || !G.zoom) return;
@@ -1513,7 +1504,7 @@ function fitView(focusId) {
   const top = lr && gr && lr.top - gr.top > G.h * 0.4 ? lr.top - gr.top - 8 : G.h;
   const w = Math.max(60, x1 - x0 + (G.multi ? 260 : 40)), h = Math.max(60, y1 - y0 + 40), k = Math.min(2.2, 0.92 * Math.min(G.w / w, top / h));
   const c = focusId && ns.find((n) => n.id === focusId);
-  /* percorso di un atomo troppo grande per stare tutto: si parte centrati sull'atomo, con i primi anelli leggibili */
+  /* percorso di una stella troppo grande per stare tutto: si parte centrati sulla stella, con i primi anelli leggibili */
   if (c && k < 0.9) { const kc = Math.min(1, Math.max(0.55, Math.min(G.w, top) / (2 * 95 * 2.4))); G.tf = d3.zoomIdentity.translate(G.w / 2 - c.x * kc, top / 2 - c.y * kc).scale(kc); }
   else G.tf = d3.zoomIdentity.translate(G.w / 2 - ((x0 + x1) / 2) * k, top / 2 - ((y0 + y1) / 2) * k).scale(k);
   d3.select(G.cv).call(G.zoom.transform, G.tf);
@@ -1650,8 +1641,8 @@ function drawNow() {
   if (G.nodes.length && !G.nodes.every((n) => Number.isFinite(n.x) && Number.isFinite(n.y))) return;
   const { w, h, tf, col } = G, k = tf.k;
   ctx.setTransform(G.dpr, 0, 0, G.dpr, 0, 0); ctx.clearRect(0, 0, w, h); if (G.dark) drawSky(ctx); ctx.save(); ctx.translate(tf.x, tf.y); ctx.scale(k, k);
-  /* bersaglio: l'atomo sotto il mouse (anteprima) oppure quello bloccato col clic.
-     Sopra un atomo del percorso bloccato l'anteprima non cambia, così se ne possono cliccare gli atomi */
+  /* bersaglio: la stella sotto il mouse (anteprima) oppure quello bloccato col clic.
+     Sopra una stella del percorso bloccato l'anteprima non cambia, così se ne possono cliccare le stelle */
   const tid = activeTarget(), actN = tid ? G.nodes.find((n) => n.id === tid) : null;
   const tgt = !S.g.pairMode && G.path && f0() && tid && tid !== S.g.focus ? tid : null;
   const RP = tgt ? rootPathFor(tgt) : null;
@@ -1679,7 +1670,7 @@ function drawNow() {
     const c0 = G.nodes.find((n) => n.id === f) || { x: 0, y: 0 }, Rf = Math.max(w, h) * 0.75 / k;
     const tint = (color, a, y0, y1) => { if (![y0, y1].every(Number.isFinite) || y1 <= y0) return; ctx.fillStyle = rgba(color, a); ctx.fillRect(vx0, y0, vx1 - vx0, y1 - y0); }; /* fasce piatte su tutta la vista: niente alone radiale */
     tint(col.ink, 0.075, c0.y + gb, vy1);
-    if (nband) tint(P.cyc.size ? col.s2 : col.ink, P.cyc.size ? 0.1 : 0.12, c0.y - g, c0.y + g);
+    if (nband) tint(col.muted, P.cyc.size ? 0.1 : 0.12, c0.y - g, c0.y + g);
     ctx.globalAlpha = 1;
     const off = Math.max(g, 16 / k) + 6 / k;
     G.bandLab = { up: [...P.down].filter((x) => !P.up.has(x)).length, dn: [...P.up].filter((x) => !P.down.has(x)).length, rel: P.rel.size, cyc: P.cyc.size, y: c0.y, off };
@@ -1743,7 +1734,7 @@ function drawNow() {
   ctx.strokeStyle = col.hi; ctx.lineWidth = 1.2 / k;
   for (const [e, q] of parts) { ctx.globalAlpha = eA(e); ctx.beginPath(); ctx.moveTo(q[0], q[1]); ctx.lineTo(q[2], q[3]); ctx.stroke(); }
   /* la testa della scarica: un tratto bianco molto breve che si spegne appena il filo è percorso */
-  if (zbusy) { ctx.save(); ctx.globalCompositeOperation = G.dark ? "lighter" : "source-over"; ctx.strokeStyle = G.dark ? "rgb(255,246,226)" : col.accent; ctx.lineCap = "round"; ctx.lineWidth = 2 / k;
+  if (zbusy) { ctx.save(); ctx.globalCompositeOperation = G.dark ? "lighter" : "source-over"; ctx.strokeStyle = G.dark ? "rgb(235,246,255)" : col.accent; ctx.lineCap = "round"; ctx.lineWidth = 2 / k;
     for (const [e, q] of parts) { const u = q[5]; if (u >= 1.5) continue; const t = Math.max(0, q[4] - 0.28), dx = q[2] - q[0], dy = q[3] - q[1], len = q[4] || 1; ctx.globalAlpha = eA(e) * Math.max(0, Math.min(1, (1.5 - u) / 0.5)) * 0.9; ctx.beginPath(); ctx.moveTo(q[0] + dx * (t / len), q[1] + dy * (t / len)); ctx.lineTo(q[2], q[3]); ctx.stroke(); }
     ctx.restore(); draw(); }
   ctx.globalAlpha = 1;
@@ -1908,7 +1899,7 @@ const resetScope = () => { const sel = selCorsi(); return [...D.atoms.values()].
 const resetLabel = () => { const sel = selCorsi(); return !sel.size ? "tutte le galassie" : sel.size === 1 ? (D.corsi.get([...sel][0]) || {}).nome : sel.size + " corsi"; };
 function resetLevels() {
   const list = resetScope(), n = list.filter((a) => a.livello !== 1).length; if (!n) return;
-  if (!window.confirm("Azzerare i livelli (" + resetLabel() + ")?\n" + n + (n === 1 ? " atomo torna" : " atomi tornano") + " al livello 1. L'operazione non si può annullare.")) return;
+  if (!window.confirm("Azzerare i livelli (" + resetLabel() + ")?\n" + n + (n === 1 ? " stella torna" : " stelle tornano") + " al livello 1. L'operazione non si può annullare.")) return;
   if (!selCorsi().size) Object.keys(LV).forEach((k) => delete LV[k]); else list.forEach((a) => { delete LV[a.id]; });
   store.set("lv", LV);
   list.forEach((a) => { a.livello = 1; a.sync = null; });
@@ -1940,7 +1931,7 @@ function renderFOv() {
 function renderStudy() {
   const el = $("#study"); if (!el) return;
   const s = S.session, it = cur();
-  if (!s || !s.total) { el.innerHTML = stateBox("Niente da studiare", S.src === "val" ? "Nessun atomo validato corrisponde ai filtri. Scegli «Tutti» nel filtro Atomi per includere gli atomi non ancora validati." : "Nessuna carta corrisponde ai filtri scelti."); return; }
+  if (!s || !s.total) { el.innerHTML = stateBox("Niente da studiare", S.src === "val" ? "Nessuna stella validata corrisponde ai filtri. Scegli «Tutti» nel filtro Stelle per includere le stelle non ancora validate." : "Nessuna carta corrisponde ai filtri scelti."); return; }
   if (!it) {
     const tot = s.stats.know + s.stats.unsure + s.stats.fail, missed = [...new Set(s.missed)];
     el.innerHTML = '<div class="box"><h3>Sessione completata</h3><div class="sum"><div class="know"><b>' + s.stats.know + '</b>sapute</div><div class="unsure"><b>' + s.stats.unsure + '</b>incerte</div><div class="fail"><b>' + s.stats.fail + "</b>sbagliate</div></div><p>" + tot + " carte valutate." + (S.saveLv ? " Livelli aggiornati su Notion." : "") + "</p>" +
@@ -1983,7 +1974,7 @@ function computeAudit() {
   const add = (id, title, sev, desc, items, o) => cats.push(Object.assign({ id, title, sev, desc, items }, o || {}));
   const I = (a, text, refs, ext) => ({ a, text: text || "", refs: refs || [], ext });
   /* puntamenti (relazioni Notion): non servono i corpi */
-  add("no-corso", "Atomi senza corso", "alta", "Nessun corso collegato: non compaiono in nessuna pagina corso." + (selCorsi().size ? " Controllo fatto su tutti i corsi." : ""), allSrc.filter((a) => !a.corsi.length).map((a) => I(a)));
+  add("no-corso", "Stelle senza corso", "alta", "Nessun corso collegato: non compaiono in nessuna pagina corso." + (selCorsi().size ? " Controllo fatto su tutti i corsi." : ""), allSrc.filter((a) => !a.corsi.length).map((a) => I(a)));
   const rotti = [], sezAltro = [];
   scope.forEach((a) => {
     a.corsi.filter((c) => !D.corsi.has(c)).forEach(() => rotti.push(I(a, "collegato a un corso che non riesco a leggere")));
@@ -1991,13 +1982,13 @@ function computeAudit() {
       const s = D.sezioni.get(sid);
       if (!s) rotti.push(I(a, "collegato a una sezione che non riesco a leggere"));
       else if (!s.corso) sezAltro.push(I(a, "la sezione «" + s.nome + "» non ha un corso"));
-      else if (a.corsi.length && !a.corsi.includes(s.corso)) sezAltro.push(I(a, "sezione «" + s.nome + "» del corso " + (D.corsi.get(s.corso) || {}).nome + ", ma l'atomo è in " + corsiNames(a).join(", ")));
+      else if (a.corsi.length && !a.corsi.includes(s.corso)) sezAltro.push(I(a, "sezione «" + s.nome + "» del corso " + (D.corsi.get(s.corso) || {}).nome + ", ma la stella è in " + corsiNames(a).join(", ")));
     });
   });
-  add("sez-altro", "Sezione di un corso diverso dall'atomo", "alta", "Il corso della sezione non è fra i corsi dell'atomo: o la sezione è sbagliata o manca il corso.", sezAltro);
+  add("sez-altro", "Sezione di un corso diverso dalla stella", "alta", "Il corso della sezione non è fra i corsi della stella: o la sezione è sbagliata o manca il corso.", sezAltro);
   add("rel-rotte", "Relazioni verso pagine non leggibili", "alta", "Corso o sezione collegati che non risultano nelle viste Notion (pagina eliminata o non condivisa).", rotti);
-  add("no-sez", "Atomi senza sezione", "media", "Non compaiono nel percorso del corso, solo nel blocco «Senza sezione».", scope.filter((a) => a.corsi.length && !a.sezioni.length).map((a) => I(a, corsiNames(a).join(", "))));
-  add("no-tag", "Atomi senza tag", "info", "Senza tag sono più difficili da ritrovare nel database.", scope.filter((a) => !a.tags.length).map((a) => I(a)));
+  add("no-sez", "Stelle senza sezione", "media", "Non compaiono nel percorso del corso, solo nel blocco «Senza sezione».", scope.filter((a) => a.corsi.length && !a.sezioni.length).map((a) => I(a, corsiNames(a).join(", "))));
+  add("no-tag", "Stelle senza tag", "info", "Senza tag sono più difficili da ritrovare nel database.", scope.filter((a) => !a.tags.length).map((a) => I(a)));
   /* quasi duplicati */
   const dup = [], seenP = new Set(), inScope = new Set(scope.map((a) => a.id));
   scope.forEach((a) => {
@@ -2009,10 +2000,10 @@ function computeAudit() {
       if (uni && (inter / uni >= 0.8 || a.norm === b.norm)) dup.push(I(a, "quasi uguale a «" + b.plain + "» (" + b.tipo + (sharesCourse(a, b) ? "" : ", altro corso") + ")", [b]));
     });
   });
-  add("dup", "Titoli quasi duplicati", "media", "Stesse parole chiave nel titolo. Può essere un doppione da fondere, oppure due atomi (es. teoria e metodo) che andrebbero almeno collegati.", dup);
+  add("dup", "Titoli quasi duplicati", "media", "Stesse parole chiave nel titolo. Può essere un doppione da fondere, oppure due stelle (es. teoria e metodo) che andrebbero almeno collegati.", dup);
   /* link nel corpo: servono i corpi letti */
   const have = scope.filter((a) => B.has(a.id)), allOk = [...D.atoms.values()].filter(srcOk), covAll = allOk.filter((a) => B.has(a.id)).length;
-  const etichProb = [], etichSin = [], self = [], fuori = [], paginaNonAtomo = [], valBoil = [], cross = [], dominio = [];
+  const etichProb = [], etichSin = [], self = [], fuori = [], paginaNonStella = [], valBoil = [], cross = [], dominio = [];
   const outs = new Map(), inb = new Map();
   allOk.forEach((a) => {
     if (!B.has(a.id)) return;
@@ -2029,7 +2020,7 @@ function computeAudit() {
       if (l.host && !D.atoms.has(l.to) && !D.known.has(l.to)) return;
       if (seen.has(k)) return; seen.add(k);
       if (l.host) { const t0 = D.atoms.get(l.to); dominio.push(I(a, "«" + (l.label || "?") + "» punta a " + l.host + " invece che a Notion: il collegamento non si apre", t0 && t0.id !== a.id ? [t0] : [])); }
-      if (l.to === a.id) { self.push(I(a, "il link «" + l.label + "» punta all'atomo stesso")); return; }
+      if (l.to === a.id) { self.push(I(a, "il link «" + l.label + "» punta alla stella stessa")); return; }
       const t = D.atoms.get(l.to);
       if (t) {
         const m = labelMatches(l.label, t);
@@ -2039,7 +2030,7 @@ function computeAudit() {
         }
         if (a.corsi.length && t.corsi.length && !sharesCourse(a, t)) cross.push(I(a, "«" + l.label + "» → «" + t.plain + "» (" + corsiNames(t).join(", ") + ")", [t]));
         if (a.valid && !t.valid) valBoil.push(I(a, "cita «" + t.plain + "», che è ancora nel bollitore", [t]));
-      } else if (D.known.has(l.to)) paginaNonAtomo.push(I(a, "«" + l.label + "» punta a " + (D.sezioni.has(l.to) ? "una sezione" : D.corsi.has(l.to) ? "un corso" : "una risorsa") + ", non a un atomo", null, "https://www.notion.so/" + l.to));
+      } else if (D.known.has(l.to)) paginaNonStella.push(I(a, "«" + l.label + "» punta a " + (D.sezioni.has(l.to) ? "una sezione" : D.corsi.has(l.to) ? "un corso" : "una risorsa") + ", non a una stella", null, "https://www.notion.so/" + l.to));
       else fuori.push(I(a, "«" + (l.label || "?") + "» punta a una pagina non presente nel database atomi (eliminata, archiviata o esterna)", null, "https://www.notion.so/" + l.to));
     });
   });
@@ -2069,32 +2060,32 @@ function computeAudit() {
       while (fr.length && !back) { const nf = []; for (const v of fr) { for (const w of nx(v)) { if (!cs.has(w)) continue; if (w === a0) { back = v; break; } if (!prev.has(w)) { prev.set(w, v); nf.push(w); } } if (back) break; } fr = nf; }
       const loop = []; for (let v = back; v; v = prev.get(v)) loop.unshift(v);
       const t = loop.map((id) => "«" + D.atoms.get(id).plain + "»").join(" cita ") + " cita «" + D.atoms.get(a0).plain + "»";
-      return I(D.atoms.get(a0), (c.length > loop.length ? c.length + " atomi collegati in ciclo, per esempio: " : "") + t, c.filter((id) => id !== a0).map((id) => D.atoms.get(id)));
+      return I(D.atoms.get(a0), (c.length > loop.length ? c.length + " stelle collegate in ciclo, per esempio: " : "") + t, c.filter((id) => id !== a0).map((id) => D.atoms.get(id)));
     });
-    add("cicli", "Cicli di dipendenza", "media", "Atomi che, seguendo i link, sono prerequisiti l'uno dell'altro: nessuno si può studiare per primo. I link reciproci diretti (A cita B e B cita A) non contano: valgono come «correlati». Di solito uno dei link va tolto o girato.", cicli, { link: true });
+    add("cicli", "Cicli di dipendenza", "media", "Stelle che, seguendo i link, sono prerequisiti l'uno dell'altro: nessuno si può studiare per primo. I link reciproci diretti (A cita B e B cita A) non contano: valgono come «correlati». Di solito uno dei link va tolto o girato.", cicli, { link: true });
   }
-  add("lab-prob", "Etichetta e destinazione non coincidono", "alta", "Il testo del link non assomiglia al titolo dell'atomo di destinazione e esiste un altro atomo il cui titolo contiene quelle parole: probabile puntamento sbagliato.", etichProb, { link: true });
+  add("lab-prob", "Etichetta e destinazione non coincidono", "alta", "Il testo del link non assomiglia al titolo della stella di destinazione e esiste un'altra stella il cui titolo contiene quelle parole: probabile puntamento sbagliato.", etichProb, { link: true });
   add("dominio", "Link con dominio sbagliato", "alta", "Il link contiene l'id di una pagina Notion ma porta a un altro sito (di solito copiato da chatgpt.com): nel grafo conta, ma in Notion non si apre. Va reinserito come link alla pagina.", dominio, { link: true });
-  add("fuori", "Link a pagine fuori dal database atomi", "alta", "Il link porta a una pagina che non è un atomo e non è nota (corso, sezione, risorsa): spesso un atomo eliminato o spostato.", fuori, { link: true });
-  add("self", "Link a se stesso", "media", "L'atomo cita se stesso.", self, { link: true });
-  add("valboil", "Atomi validati che citano atomi nel bollitore", "media", "Con «Solo validati» questi collegamenti spariscono dal grafo e dal lettore.", valBoil, { link: true });
-  add("lab-sin", "Etichetta diversa dal titolo, senza alternative", "info", "Nessun altro atomo corrisponde alle parole del link: di solito è un sinonimo o una forma abbreviata. Da rivedere a campione.", etichSin, { link: true });
-  add("non-atomo", "Link a sezioni, corsi o risorse", "info", "Il link non porta a un atomo ma a un'altra tabella del database.", paginaNonAtomo, { link: true });
-  add("cross", "Link verso atomi di un altro corso", "info", "Spesso legittimi (concetti condivisi), ma vale la pena controllarli.", cross, { link: true });
+  add("fuori", "Link a pagine fuori dal database atomi", "alta", "Il link porta a una pagina che non è una stella e non è nota (corso, sezione, risorsa): spesso una stella eliminata o spostata.", fuori, { link: true });
+  add("self", "Link a se stesso", "media", "La stella cita se stessa.", self, { link: true });
+  add("valboil", "Stelle validate che citano stelle nel bollitore", "media", "Con «Solo validati» questi collegamenti spariscono dal grafo e dal lettore.", valBoil, { link: true });
+  add("lab-sin", "Etichetta diversa dal titolo, senza alternative", "info", "Nessun'altra stella corrisponde alle parole del link: di solito è un sinonimo o una forma abbreviata. Da rivedere a campione.", etichSin, { link: true });
+  add("non-stella", "Link a sezioni, corsi o risorse", "info", "Il link non porta a una stella ma a un'altra tabella del database.", paginaNonStella, { link: true });
+  add("cross", "Link verso stelle di un altro corso", "info", "Spesso legittimi (concetti condivisi), ma vale la pena controllarli.", cross, { link: true });
   /* completezza della rete: servono tutti i corpi */
   const unread = allOk.filter((a) => !B.has(a.id) && CR.failedSet.has(a.id)), full = covAll > 0 && covAll + unread.length >= allOk.length;
   const isol = [], noOut = [], noIn = [];
   if (full) {
     scope.forEach((a) => {
       const o = (outs.get(a.id) || new Set()).size, i = (inb.get(a.id) || new Set()).size;
-      if (!o && !i) isol.push(I(a, "nessun collegamento in entrata né in uscita")); else if (!o) noOut.push(I(a, "cita " + 0 + " atomi; è citato da " + i)); else if (!i) noIn.push(I(a, "non è citato da nessuno; cita " + o));
+      if (!o && !i) isol.push(I(a, "nessun collegamento in entrata né in uscita")); else if (!o) noOut.push(I(a, "cita " + 0 + " stelle; è citato da " + i)); else if (!i) noIn.push(I(a, "non è citato da nessuno; cita " + o));
     });
   }
   const gate = (id, title, sev, desc, items) => add(id, title, sev, desc + (full ? "" : " (Serve la lettura di tutti gli atomi: " + covAll + " / " + allOk.length + ")"), items, { link: true, needsFull: !full });
-  add("non-letti", "Atomi non leggibili", "media", "Dopo tre tentativi il corpo non è stato letto: i loro collegamenti mancano dal grafo e dai controlli. Riprova con «Rileggi tutto».", unread.map((a) => I(a)), { link: true });
-  gate("isolati", "Atomi isolati", "media", "Non citano e non sono citati: sono fuori dal grafo.", isol);
-  gate("no-out", "Atomi che non citano nessun altro atomo", "info", "Una definizione senza nemmeno un termine collegato è raro: controlla se mancano i link.", noOut);
-  gate("no-in", "Atomi che nessuno cita", "info", "Utile per trovare atomi che dovrebbero essere richiamati da altri.", noIn);
+  add("non-letti", "Stelle non leggibili", "media", "Dopo tre tentativi il corpo non è stato letto: i loro collegamenti mancano dal grafo e dai controlli. Riprova con «Rileggi tutto».", unread.map((a) => I(a)), { link: true });
+  gate("isolati", "Stelle isolate", "media", "Non citano e non sono citati: sono fuori dal grafo.", isol);
+  gate("no-out", "Stelle che non citano nessun'altra stella", "info", "Una definizione senza nemmeno un termine collegato è raro: controlla se mancano i link.", noOut);
+  gate("no-in", "Stelle che nessuno cita", "info", "Utile per trovare stelle che dovrebbero essere richiamate da altri.", noIn);
   AUD.key = key; AUD.res = { cats, covScope: have.length, scopeN: scope.length, covAll, allN: allOk.length, full };
   return AUD.res;
 }
@@ -2117,14 +2108,14 @@ V.qualita = () => {
     }).join("") + "</section>";
   }).join("");
   return '<div class="stack"><div><h2 class="sec">Controllo di collegamenti e puntamenti</h2>' +
-    '<p class="note">I «puntamenti» sono le relazioni Notion (corso, sezione); gli «archi» del grafo sono i link scritti nel corpo degli atomi. Il controllo vale per la sorgente e il corso scelti in alto, e confronta ogni link con il titolo dell\'atomo di destinazione.</p>' +
+    '<p class="note">I «puntamenti» sono le relazioni Notion (corso, sezione); gli «archi» del grafo sono i link scritti nel corpo delle stelle. Il controllo vale per la sorgente e il corso scelti in alto, e confronta ogni link con il titolo della stella di destinazione.</p>' +
     '<div class="cov" role="img" aria-label="Corpi letti"><i style="width:' + pct + '%"></i></div><p class="note"><span data-crawl>' + crawlStatus(scope) + '</span> &nbsp;' +
     (mcp && !CR.running ? (cov < scope.length ? '<button class="ghost sm" type="button" data-act="crawl">Leggi i collegamenti mancanti</button> ' : "") + '<button class="ghost sm" type="button" data-act="recrawl">Rileggi tutto</button> ' : "") +
     '<button class="ghost sm" type="button" data-act="export">Copia il report</button></p><div id="reportBox"></div>' +
     (cov ? '<p class="note"><b>' + tot + "</b> segnalazioni da correggere in questa selezione.</p>" : "") + "</div>" + cats + "</div>";
 };
 function reportMd() {
-  const r = computeAudit(), out = ["# Controllo collegamenti atomi", "", "Sorgente: " + (S.src === "val" ? "solo validati" : S.src === "all" ? "validati e bollitore" : "solo bollitore") + " · corsi: " + (selCorsi().size ? [...selCorsi()].map((id) => (D.corsi.get(id) || {}).nome).join(", ") : "tutti") + " · corpi letti " + r.covScope + "/" + r.scopeN, ""];
+  const r = computeAudit(), out = ["# Controllo collegamenti stelle", "", "Sorgente: " + (S.src === "val" ? "solo validati" : S.src === "all" ? "validati e bollitore" : "solo bollitore") + " · corsi: " + (selCorsi().size ? [...selCorsi()].map((id) => (D.corsi.get(id) || {}).nome).join(", ") : "tutti") + " · corpi letti " + r.covScope + "/" + r.scopeN, ""];
   r.cats.forEach((c) => { if (!c.items.length) return; out.push("## " + c.title + " (" + c.items.length + ")", c.desc, ""); c.items.forEach((it) => out.push("- " + it.a.plain + (it.text ? " — " + it.text : "") + (it.refs.length ? " " + it.refs.map((x) => "[" + x.titolo + "]").join(", ") : "") + " <" + it.a.url + ">")); out.push(""); });
   return out.join("\n");
 }
