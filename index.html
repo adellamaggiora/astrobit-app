@@ -31,7 +31,7 @@
     --accent:#9DB3FF; --accent-ink:#0E1117; --accent-soft:#1D2540;
     --lv1:#2A3350; --lv2:#3B4B80; --lv3:#5870BD; --lv4:#7F97E0; --lv5:#B3C3FF;
     --ok:#7FD1A6; --ok-bg:#16291F; --warn:#E8C171; --warn-bg:#2B2210; --bad:#F2A0A3; --bad-bg:#2E1618;
-    --s1:#3987e5; --s2:#d95926; --edge:rgba(154,164,181,.34); --edge-hi:#9DB3FF;
+    --s1:#3987e5; --s2:#d95926; --edge:rgba(150,170,214,.30); --edge-hi:#EFCB86;
   }
 }
 * { box-sizing:border-box; }
@@ -296,7 +296,8 @@ mjx-assistive-mml { position:absolute !important; top:0; left:0; clip:rect(1px,1
 .gtools { display:flex; flex-wrap:wrap; gap:8px 16px; align-items:center; margin-bottom:10px; font-size:.875rem; }
 .gtip { position:absolute; pointer-events:none; background:var(--ink); color:var(--paper); padding:5px 9px; border-radius:4px; font-size:.8rem; max-width:260px; z-index:5; line-height:1.35; }
 .gstat { position:absolute; left:10px; bottom:10px; background:color-mix(in srgb, var(--paper) 80%, transparent); border-radius:6px; padding:4px 6px; font-size:.78rem; color:var(--muted); max-width:calc(100% - 20px); }
-.glegend .glyph { width:12px; height:12px; margin-right:6px; vertical-align:-2px; } .glegend .lemo { margin-right:5px; }
+.glegend .glyph { width:10px; height:10px; margin-right:7px; vertical-align:-1px; background:var(--s1); box-shadow:none; } .glegend .glyph.b { background:var(--s2); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .glegend .glyph { box-shadow:0 0 7px 2px color-mix(in srgb, var(--s1) 55%, transparent); } :root:not([data-theme="light"]) .glegend .glyph.b { box-shadow:0 0 7px 2px color-mix(in srgb, var(--s2) 55%, transparent); } }
 .glegend { position:absolute; right:10px; top:10px; background:color-mix(in srgb, var(--paper) 80%, transparent); border-radius:6px; padding:6px 8px; font-size:.76rem; color:var(--muted); display:flex; flex-direction:column; gap:3px; }
 .glegend span { display:flex; align-items:center; }
 @media (max-width:640px) { .glegend { right:6px; left:6px; top:auto; bottom:44px; flex-direction:row; flex-wrap:wrap; gap:2px 12px; padding:6px 8px; font-size:.7rem; } .gstat { left:6px; bottom:6px; } .gwrap { height:min(72vh,720px); min-height:440px; } }
@@ -1214,6 +1215,7 @@ function buildGraph() {
   G.nodes = nodes; G.links = links; G.idset = ids;
   const srcSet = new Set(G.src || []);
   G.top = G.filtered && srcSet.size <= 40 ? srcSet : new Set(nodes.slice().sort((a, b) => b.deg - a.deg).slice(0, 28).filter((n) => n.deg > 0).map((n) => n.id));
+  G.spk = new Set(nodes.slice().sort((a, b) => b.deg - a.deg).slice(0, 12).filter((n) => n.deg > 1).map((n) => n.id));
   G.total = atoms.length; G.isolated = atoms.filter((a) => !deg.get(a.id)).length;
   G.isoOut = atoms.filter((a) => !deg.get(a.id) && degree(a.id) > 0).length;
   pairUpdate();
@@ -1331,7 +1333,12 @@ function readColors() {
   const cs = getComputedStyle(document.documentElement), g = (v) => cs.getPropertyValue(v).trim();
   G.col = { s1: g("--s1"), s2: g("--s2"), edge: g("--edge"), hi: g("--edge-hi"), ink: g("--ink"), surf: g("--paper"), muted: g("--muted"), accent: g("--accent") };
   G.font = '"LMR","Latin Modern Roman",Georgia,serif';
-  G.spr.clear();
+  const nums = (c) => rgba(c, 1).match(/\d+/g).slice(0, 3).map(Number);
+  const lum = (c) => { const m = nums(c); return (0.2126 * m[0] + 0.7152 * m[1] + 0.0722 * m[2]) / 255; };
+  const lift = (c, t) => "rgb(" + nums(c).map((v) => Math.round(v + (255 - v) * t)).join(",") + ")";
+  /* tema scuro: il grafo diventa un cielo (stelle, nebulose, alone sui nodi); nel tema chiaro resta piatto */
+  G.dark = lum(G.col.surf) < 0.35; G.col.s1c = lift(G.col.s1, 0.16); G.col.s2c = lift(G.col.s2, 0.16);
+  G.spr.clear(); G.sky = null; G.hz = null;
 }
 V.grafo = () => {
   const scope = crawlTargets(), cov = coverage(scope), f = S.g.focus && D.atoms.get(S.g.focus);
@@ -1342,7 +1349,6 @@ V.grafo = () => {
     (cov < scope.length && !CR.running ? '<button class="ghost sm" type="button" data-act="crawl">Leggi i collegamenti (' + (scope.length - cov) + ")</button>" : "");
   return '<div class="stack">' + (tools ? '<div><div class="gtools">' + lit + tools + "</div></div>" : "") +
     '<div class="gpair" id="gpair" role="status" hidden></div><div class="gwrap" id="gw" role="img" aria-label="Grafo dei collegamenti tra atomi"><canvas id="gc"></canvas><div class="glegend"><span><span class="glyph none"></span>validato</span><span><span class="glyph b none"></span>bollitore</span>' +
-    TIPI.map((t) => '<span><span class="lemo">' + (EMO[t] || "") + "</span>" + t + "</span>").join("") +
     '</div><div class="gtip" id="gtip" hidden></div><div class="gempty" id="gempty" hidden></div></div>' +
     '<p class="gcmd">' + (f ? "Sotto i prerequisiti, sopra i dipendenti · " : "") +
     "Passa sopra: anteprima · Clic: seleziona e mostra i collegamenti · Doppio clic: apre la scheda (al tocco: tocca di nuovo l'atomo) · Clic sul vuoto: deseleziona" +
@@ -1418,6 +1424,8 @@ function startSim() {
   const nodes = G.nodes, links = G.links.map((e) => ({ ...e })), N = nodes.length, f = S.g.focus;
   const sel = selCorsi(); nodes.forEach((n) => { n.ck = n.a.corsi.find((c) => !sel.size || sel.has(c)) || n.a.corsi[0] || "-"; });
   const cs = [...new Set(nodes.map((n) => n.ck))].sort(), cl = cs.length > 1 && !f; G.multi = cl;
+  /* costellazioni: per ogni corso gli 8 atomi più collegati, uniti dal percorso più corto (solo disegno, non entra nella simulazione) */
+  { const by = new Map(); nodes.forEach((n) => { if (n.deg >= 2) (by.get(n.ck) || by.set(n.ck, []).get(n.ck)).push(n); }); G.hubs = [...by.values()].filter((a) => a.length >= 3).map((a) => a.sort((p, q) => q.deg - p.deg).slice(0, 8)); }
   const R = Math.max(150, Math.sqrt(N) * 21), anc = new Map(cs.map((c, i) => [c, cl ? { x: Math.cos((i / cs.length) * 2 * Math.PI) * R, y: Math.sin((i / cs.length) * 2 * Math.PI) * R } : { x: 0, y: 0 }]));
   /* posizioni iniziali: quelle già calcolate per questo insieme di corsi, altrimenti attorno al centro del corso */
   const cache = G.pos.get(G.key); let cached = 0;
@@ -1510,16 +1518,84 @@ function showTip(n, e) {
   t.style.top = (y + 14 + h > r.height - 4 ? Math.max(4, y - 14 - h) : y + 14) + "px";
 }
 function hideTip() { const t = $("#gtip"); if (t) t.hidden = true; }
-/* icona del nodo disegnata una volta ad alta risoluzione e poi solo copiata: nitida a ogni zoom e veloce */
-const SPR = 112;
-function sprite(tipo, valid) {
-  const key = tipo + "|" + valid; let c = G.spr.get(key); if (c) return c;
-  c = document.createElement("canvas"); c.width = c.height = SPR;
-  const x = c.getContext("2d"), R = SPR / 2, col = valid ? G.col.s1 : G.col.s2, lw = SPR * 0.075;
-  x.beginPath(); x.arc(R, R, R - lw / 2 - 1, 0, 2 * Math.PI); x.fillStyle = G.col.surf; x.fill();
-  x.globalAlpha = 0.2; x.fillStyle = col; x.fill(); x.globalAlpha = 1; x.lineWidth = lw; x.strokeStyle = col; x.stroke();
-  const e = EMO[tipo]; if (e) { x.font = Math.round(SPR * 0.5) + 'px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif'; x.textAlign = "center"; x.textBaseline = "middle"; x.fillText(e, R, R + SPR * 0.035); }
-  G.spr.set(key, c); return c;
+/* ---- stile «spaziale» (tema scuro) ----
+   Le immagini che servono sono disegnate una volta e poi solo copiate, così il grafo resta veloce. */
+function haloSprite(valid) {
+  const key = "h" + valid; let c = G.spr.get(key); if (c) return c;
+  c = document.createElement("canvas"); c.width = c.height = 96;
+  const x = c.getContext("2d"), col = valid ? G.col.s1 : G.col.s2, g = x.createRadialGradient(48, 48, 0, 48, 48, 48);
+  [[0, 1], [0.18, 0.62], [0.4, 0.24], [0.68, 0.07], [1, 0]].forEach(([s, a]) => g.addColorStop(s, rgba(col, a)));
+  x.fillStyle = g; x.fillRect(0, 0, 96, 96); G.spr.set(key, c); return c;
+}
+function spikeSprite() {
+  let c = G.spr.get("spike"); if (c) return c;
+  c = document.createElement("canvas"); c.width = c.height = 128; const x = c.getContext("2d");
+  const arm = (hor) => { const g = hor ? x.createLinearGradient(0, 0, 128, 0) : x.createLinearGradient(0, 0, 0, 128);
+    [[0, 0], [0.25, 0.12], [0.42, 0.55], [0.5, 1], [0.58, 0.55], [0.75, 0.12], [1, 0]].forEach(([s, a]) => g.addColorStop(s, "rgba(214,226,255," + a + ")"));
+    x.fillStyle = g; if (hor) x.fillRect(0, 63, 128, 2); else x.fillRect(63, 0, 2, 128); };
+  arm(true); arm(false); G.spr.set("spike", c); return c;
+}
+/* due strati di stelle in mattonelle ripetibili: si muovono appena meno del grafo, per dare profondità */
+function skyTiles() {
+  const d = G.dpr; if (G.sky && G.sky.d === d) return G.sky;
+  const T = Math.round(512 * d), tints = ["200,215,255", "255,236,208", "225,228,255"];
+  const mk = (n, r0, r1, a0, a1, seed) => {
+    const c = document.createElement("canvas"); c.width = c.height = T; const x = c.getContext("2d"); let s = seed;
+    const rnd = () => ((s = (Math.imul(s, 1664525) + 1013904223) >>> 0) / 4294967296);
+    for (let i = 0; i < n; i++) {
+      const r = (r0 + rnd() * (r1 - r0)) * d, px = r + rnd() * (T - 2 * r), py = r + rnd() * (T - 2 * r), tc = tints[Math.floor(rnd() * 3)];
+      x.fillStyle = "rgba(" + tc + "," + (a0 + rnd() * (a1 - a0)).toFixed(2) + ")"; x.beginPath(); x.arc(px, py, r, 0, 2 * Math.PI); x.fill();
+    }
+    return c;
+  };
+  return (G.sky = { d, far: mk(230, 0.35, 0.7, 0.22, 0.5, 7), near: mk(55, 0.6, 1.0, 0.45, 0.85, 19), pf: null, pn: null });
+}
+function drawSky(ctx) {
+  const { w, h, tf, dpr: d, col } = G, sk = skyTiles(), W = w * d, H = h * d;
+  ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0);
+  [[sk.far, 0.03, "pf"], [sk.near, 0.07, "pn"]].forEach(([tile, f, key]) => {
+    sk[key] = sk[key] || ctx.createPattern(tile, "repeat"); const ox = tf.x * f * d, oy = tf.y * f * d;
+    ctx.save(); ctx.translate(ox, oy); ctx.fillStyle = sk[key]; ctx.fillRect(-ox, -oy, W, H); ctx.restore();
+  });
+  /* sui bordi le stelle svaniscono nel colore della pagina: nessun riquadro visibile */
+  const fw = Math.min(90, w * 0.12) * d, fh = Math.min(70, h * 0.14) * d;
+  const edge = (x0, y0, x1, y1, rx, ry, rw, rh) => { const g = ctx.createLinearGradient(x0, y0, x1, y1); g.addColorStop(0, rgba(col.surf, 1)); g.addColorStop(1, rgba(col.surf, 0)); ctx.fillStyle = g; ctx.fillRect(rx, ry, rw, rh); };
+  edge(0, 0, fw, 0, 0, 0, fw, H); edge(W, 0, W - fw, 0, W - fw, 0, fw, H); edge(0, 0, 0, fh, 0, 0, W, fh); edge(0, H, 0, H - fh, 0, H - fh, W, fh);
+  ctx.restore();
+}
+/* nebulosa: una texture a bassa risoluzione, in coordinate del grafo, con un alone largo per ogni atomo; si ricalcola solo quando i nodi si muovono */
+function buildHaze(sig, now) {
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  for (const n of G.nodes) { if (n.x < x0) x0 = n.x; if (n.x > x1) x1 = n.x; if (n.y < y0) y0 = n.y; if (n.y > y1) y1 = n.y; }
+  if (![x0, y0, x1, y1].every(Number.isFinite)) return null;
+  const m = 120, u = Math.max(5, (Math.max(x1 - x0, y1 - y0) + 2 * m) / 640), w = Math.ceil((x1 - x0 + 2 * m) / u), h = Math.ceil((y1 - y0 + 2 * m) / u);
+  const old = G.hz && G.hz.c, c = old && old.width === w && old.height === h ? old : Object.assign(document.createElement("canvas"), { width: w, height: h }), x = c.getContext("2d");
+  x.clearRect(0, 0, w, h); const ox = x0 - m, oy = y0 - m;
+  for (const n of G.nodes) { const v = n.a.valid, R = (n.r * 2.4 + 24) / u; x.globalAlpha = v ? 0.26 : 0.22; x.drawImage(haloSprite(v), (n.x - ox) / u - R, (n.y - oy) / u - R, 2 * R, 2 * R); }
+  return { c, x0: ox, y0: oy, u, w, h, sig, t: now, ver: G.ver };
+}
+function drawHaze(ctx) {
+  const now = performance.now(); let sig = 0; for (const n of G.nodes) sig += Math.round(n.x) * 3 + Math.round(n.y);
+  if (!Number.isFinite(sig)) return;
+  let hz = G.hz; if (!hz || hz.ver !== G.ver || (hz.sig !== sig && now - hz.t > 90)) hz = G.hz = buildHaze(sig, now);
+  if (!hz) return;
+  ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = 0.85 * (G.ea == null ? 1 : G.ea); ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = "low";
+  ctx.drawImage(hz.c, hz.x0, hz.y0, hz.w * hz.u, hz.h * hz.u); ctx.restore();
+}
+/* costellazioni: tratteggio sottile tra gli atomi più collegati di ogni corso; i salti troppo lunghi (atomi isolati dal resto) si omettono */
+function drawConstellations(ctx, k, alpha) {
+  ctx.save(); ctx.setLineDash([6 / k, 5 / k]); ctx.lineWidth = 1.3 / k; ctx.strokeStyle = "rgb(222,230,252)"; ctx.globalAlpha = alpha; ctx.beginPath();
+  for (const hub of G.hubs) {
+    const m = hub.length, inT = new Array(m).fill(false), best = new Array(m).fill(Infinity), from = new Array(m).fill(-1), es = []; best[0] = 0;
+    for (let i = 0; i < m; i++) {
+      let u = -1; for (let j = 0; j < m; j++) if (!inT[j] && (u < 0 || best[j] < best[u])) u = j;
+      inT[u] = true; if (from[u] >= 0) es.push([hub[from[u]], hub[u], best[u]]);
+      for (let j = 0; j < m; j++) if (!inT[j]) { const d = Math.hypot(hub[u].x - hub[j].x, hub[u].y - hub[j].y); if (d < best[j]) { best[j] = d; from[j] = u; } }
+    }
+    const ds = es.map((e) => e[2]).sort((p, q) => p - q), cap = Math.max(90, (ds[Math.floor(ds.length / 2)] || 0) * 2.4);
+    for (const [p, q, d] of es) if (d <= cap && Number.isFinite(d)) { ctx.moveTo(p.x, p.y); ctx.lineTo(q.x, q.y); }
+  }
+  ctx.stroke(); ctx.restore();
 }
 const f0 = () => S.g.focus && G.nodes.some((n) => n.id === S.g.focus);
 /* atomi illuminati partendo da id: nel singolo atomo il percorso verso il centro, nel grafo generale quelli entro il massimo di archi */
@@ -1537,7 +1613,7 @@ function draw() { if (!G.raf && G.ctx) G.raf = requestAnimationFrame(() => { G.r
 function drawNow() {
   const ctx = G.ctx; if (!ctx || !G.tf) return;
   const { w, h, tf, col } = G, k = tf.k;
-  ctx.setTransform(G.dpr, 0, 0, G.dpr, 0, 0); ctx.clearRect(0, 0, w, h); ctx.save(); ctx.translate(tf.x, tf.y); ctx.scale(k, k);
+  ctx.setTransform(G.dpr, 0, 0, G.dpr, 0, 0); ctx.clearRect(0, 0, w, h); if (G.dark) drawSky(ctx); ctx.save(); ctx.translate(tf.x, tf.y); ctx.scale(k, k);
   /* bersaglio: l'atomo sotto il mouse (anteprima) oppure quello bloccato col clic.
      Sopra un atomo del percorso bloccato l'anteprima non cambia, così se ne possono cliccare gli atomi */
   const tid = activeTarget(), actN = tid ? G.nodes.find((n) => n.id === tid) : null;
@@ -1572,6 +1648,7 @@ function drawNow() {
     const off = Math.max(g, 16 / k) + 6 / k;
     G.bandLab = { up: [...P.down].filter((x) => !P.up.has(x)).length, dn: [...P.up].filter((x) => !P.down.has(x)).length, rel: P.rel.size, cyc: P.cyc.size, y: c0.y, off };
   }
+  if (G.dark && !P) drawHaze(ctx);
   /* anelli: uno per ogni distanza presente nel percorso di questo atomo */
   if (P && f) { const c = G.nodes.find((n) => n.id === f), mx = Math.min(40, Math.max(0, ...P.dist.values())); if (c) {
     ctx.strokeStyle = col.muted; ctx.lineWidth = 1.3 / k; ctx.setLineDash([6 / k, 5 / k]);
@@ -1592,25 +1669,32 @@ function drawNow() {
   }
   G.ea = ease(G.ea, PR ? 0.12 : dm ? 0.22 : 1);
   ctx.strokeStyle = col.edge; ctx.globalAlpha = G.ea; ctx.lineWidth = 1 / k; ctx.stroke(); ctx.globalAlpha = 1;
+  if (G.dark && G.multi && !P && G.hubs) drawConstellations(ctx, k, 0.75 * G.ea);
   /* un arco illuminato prende la luminosità del suo estremo più tenue: si accende insieme agli atomi */
   const eA = (e) => Math.min(e.source.al == null ? 1 : e.source.al, e.target.al == null ? 1 : e.target.al);
   if (pathE.length) { ctx.strokeStyle = col.accent; ctx.lineWidth = 2.6 / k; for (const e of pathE) { ctx.globalAlpha = eA(e); ctx.beginPath(); ctx.moveTo(e.source.x, e.source.y); ctx.lineTo(e.target.x, e.target.y); ctx.stroke(); } ctx.globalAlpha = 1; }
   /* il percorso sotto il puntatore nell'elenco, in evidenza */
   if (G.hiIdx != null && G.shown && G.shown[G.hiIdx]) { const p = G.shown[G.hiIdx], byId = new Map(G.nodes.map((n) => [n.id, n])); ctx.beginPath(); for (let i = 1; i < p.length; i++) { const u = byId.get(p[i - 1]), v = byId.get(p[i]); if (u && v) { ctx.moveTo(u.x, u.y); ctx.lineTo(v.x, v.y); } } ctx.strokeStyle = col.ink; ctx.lineWidth = 3.6 / k; ctx.stroke(); }
+  if (G.dark && litE.size) { ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.strokeStyle = col.hi; ctx.lineWidth = 6 / k; litE.forEach((arr) => { for (const e of arr) { ctx.globalAlpha = 0.16 * eA(e); ctx.beginPath(); ctx.moveTo(e.source.x, e.source.y); ctx.lineTo(e.target.x, e.target.y); ctx.stroke(); } }); ctx.restore(); }
   ctx.strokeStyle = col.hi; ctx.lineWidth = 1.8 / k;
   litE.forEach((arr) => { for (const e of arr) { ctx.globalAlpha = eA(e); ctx.beginPath(); ctx.moveTo(e.source.x, e.source.y); ctx.lineTo(e.target.x, e.target.y); ctx.stroke(); } });
   ctx.globalAlpha = 1;
-  /* nodi: piccoli come punti raggruppati per colore, grandi come icone */
-  const dots = new Map(), big = [];
+  /* nodi: dischi pieni, blu i validati e arancio i bollitori. Nel tema scuro sotto ogni disco c'è un alone di luce e gli hub hanno le punte di diffrazione */
+  const dots = new Map(), glow = [];
   for (const n of G.nodes) {
     let rs = Math.min(n.r * k, capR(n)); if (P && P.dist.get(n.id) <= 1) rs = Math.max(rs, 9); n.rw = rs / k;
     if (!vis(n)) continue;
-    const a = alphaOf(n);
-    if (rs >= 6) big.push([n, a]); else { const key = (n.a.valid ? 1 : 0) + "|" + Math.round(a * 20) / 20; (dots.get(key) || dots.set(key, []).get(key)).push(n); }
+    const a = alphaOf(n), key = (n.a.valid ? 1 : 0) + "|" + Math.round(a * 20) / 20;
+    (dots.get(key) || dots.set(key, []).get(key)).push(n);
+    if (G.dark && a > 0.04) glow.push([n, a, rs]);
   }
-  dots.forEach((arr, key) => { const [v, a] = key.split("|"); ctx.globalAlpha = +a; ctx.fillStyle = v === "1" ? col.s1 : col.s2; ctx.beginPath(); for (const n of arr) { ctx.moveTo(n.x + n.rw, n.y); ctx.arc(n.x, n.y, n.rw, 0, 2 * Math.PI); } ctx.fill(); });
-  ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = "high";
-  for (const [n, a] of big) { ctx.globalAlpha = a; ctx.drawImage(sprite(n.a.tipo, n.a.valid), n.x - n.rw, n.y - n.rw, 2 * n.rw, 2 * n.rw); }
+  if (G.dark) {
+    ctx.globalCompositeOperation = "lighter";
+    for (const [n, a, rs] of glow) { const v = n.a.valid, R = (rs * (v ? 2.8 : 3.2) + (v ? 4 : 5)) / k; ctx.globalAlpha = a * (v ? 0.85 : 0.6); ctx.drawImage(haloSprite(v), n.x - R, n.y - R, 2 * R, 2 * R); }
+    for (const [n, a, rs] of glow) { if (!G.spk || !G.spk.has(n.id) || rs < 3 || a < 0.3) continue; const L = (rs * 5.5 + 8) / k; ctx.globalAlpha = a * 0.5; ctx.drawImage(spikeSprite(), n.x - L, n.y - L, 2 * L, 2 * L); }
+    ctx.globalCompositeOperation = "source-over";
+  }
+  dots.forEach((arr, key) => { const [v, a] = key.split("|"); ctx.globalAlpha = +a; ctx.fillStyle = G.dark ? (v === "1" ? col.s1c : col.s2c) : (v === "1" ? col.s1 : col.s2); ctx.beginPath(); for (const n of arr) { ctx.moveTo(n.x + n.rw, n.y); ctx.arc(n.x, n.y, n.rw, 0, 2 * Math.PI); } ctx.fill(); });
   ctx.globalAlpha = 1;
   const ring = (n, c, wd) => { ctx.beginPath(); ctx.arc(n.x, n.y, n.rw + 3 / k, 0, 2 * Math.PI); ctx.strokeStyle = c; ctx.lineWidth = wd / k; ctx.stroke(); };
   if (f) { const c = G.nodes.find((n) => n.id === f); if (c) ring(c, col.accent, 2.2); }
