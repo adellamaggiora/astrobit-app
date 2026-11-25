@@ -436,7 +436,9 @@ const idb = {
 };
 
 /* ============ stato ============ */
-let mcp = null;
+let mcp = null, STATIC = false;
+/* livelli modificati fuori da Claude: restano nel browser (nessun accesso in scrittura a Notion) */
+const LV = store.get("lv", {});
 const D = { atoms: new Map(), corsi: new Map(), sezioni: new Map(), risorse: new Map(), known: new Set(), corsiList: [] };
 const B = new Map();                       // id -> { body, links:[{to,label,kind}], t }
 const L = { out: new Map(), inn: new Map(), ver: 0 };
@@ -623,6 +625,8 @@ function errText(e) {
 function describeError(e) {
   const c = e && e.code, m = errText(e).slice(0, 220);
   switch (c) {
+    case "export_missing": return { t: "Dati non ancora esportati", d: "Mancano data/data.json e data/bodies.json. Avvia il workflow «Esporta da Notion» dalla scheda Actions del repository, poi ricarica. In locale servi la cartella con un server HTTP (non con file://).", retry: true };
+    case "no_export": return { t: "Corpo non presente nell'esportazione", d: "Questo atomo non è nei dati esportati: rilancia l'esportazione da Notion.", retry: false };
     case "needs_reauth": return { t: "Connessione a Notion scaduta", d: "Riconnetti Notion da Impostazioni > Connettori in claude.ai, poi ricarica.", retry: false };
     case "server_not_connected": return { t: "Notion non è collegato", d: "Aggiungi il connettore Notion da Impostazioni > Connettori in claude.ai, poi ricarica.", retry: false };
     case "selection_required": return { t: "Scegli quale connettore Notion usare", d: "Hai più connettori Notion. Selezionane uno quando richiesto, poi riprova.", retry: true };
@@ -687,7 +691,7 @@ function buildData(raw) {
   });
   (raw.atomi || []).forEach((r) => {
     const id = hex(r.url); if (!id) return;
-    const lv = Number(r.Livello);
+    const lv = Number(STATIC && LV[id] != null ? LV[id] : r.Livello);
     const tipo = noEmoji(r.Tipologia) || "Altro", em = emojiOf(r.Tipologia); if (em) EMO[tipo] = em;
     const a = { id, url: r.url, titolo: unesc(r.Nome) || "(senza titolo)", tipo,
       corsi: parseArr(r["📚 Corsi"]).map(hex).filter(Boolean), sezioni: parseArr(r.Sezione).map(hex).filter(Boolean), tags: parseArr(r.Tag),
@@ -798,7 +802,7 @@ const inflight = new Map();
 function getBody(a, force) {
   const c = B.get(a.id);
   if (c && !force) return Promise.resolve(c.body);
-  if (!mcp) return Promise.reject(Object.assign(new Error("offline"), { code: "server_not_connected" }));
+  if (!mcp) return Promise.reject(Object.assign(new Error("offline"), { code: STATIC ? "no_export" : "server_not_connected" }));
   if (inflight.has(a.id)) return inflight.get(a.id);
   const p = mcp.callTool(SERVER, "notion-fetch", { id: a.url }).then((r) => {
     const body = extractContent(r);
@@ -842,15 +846,33 @@ const outLinks = (id) => (L.out.get(id) || []).filter((l) => D.atoms.has(l.to) &
 const degree = (id) => { const o = new Set(outLinks(id).map((l) => l.to)); (L.inn.get(id) || []).forEach((x) => o.add(x)); return o.size; };
 
 /* ============ caricamento ============ */
+/* ============ esportazione statica (uso fuori da Claude) ============ */
+async function fetchJson(path) {
+  let r;
+  try { r = await fetch(path, { cache: "no-cache" }); } catch (e) { throw Object.assign(new Error(String((e && e.message) || e)), { code: "export_missing" }); }
+  if (!r.ok) throw Object.assign(new Error(path + ": HTTP " + r.status), { code: "export_missing" });
+  try { return await r.json(); } catch (e) { throw Object.assign(new Error(path + " non è JSON valido"), { code: "export_missing" }); }
+}
+async function fetchExport() {
+  const [d, bodies] = await Promise.all([fetchJson("data/data.json"), fetchJson("data/bodies.json")]);
+  const t = Date.parse(d.generatedAt) || Date.now();
+  B.clear();
+  Object.keys(bodies).forEach((id) => B.set(id, { id, body: bodies[id], links: parseLinks(bodies[id]), t }));
+  return { corsi: d.corsi || [], sezioni: d.sezioni || [], risorse: d.risorse || [], atomi: d.atomi || [], t };
+}
 async function load(isRetry) {
   S.refreshing = true; if (S.status !== "ready") S.status = "loading"; S.err = null; renderChrome(); if (S.status !== "ready") renderView();
   try {
-    const [corsi, sezioni, risorse] = await Promise.all([queryAll(VIEWS.corsi), queryAll(VIEWS.sezioni), queryAll(VIEWS.risorse)]);
-    const atomi = await queryAll(VIEWS.atomi);
-    const raw = { corsi, sezioni, risorse, atomi, t: Date.now() };
+    let raw;
+    if (STATIC) raw = await fetchExport();
+    else {
+      const [corsi, sezioni, risorse] = await Promise.all([queryAll(VIEWS.corsi), queryAll(VIEWS.sezioni), queryAll(VIEWS.risorse)]);
+      const atomi = await queryAll(VIEWS.atomi);
+      raw = { corsi, sezioni, risorse, atomi, t: Date.now() };
+    }
     S.raw = raw; buildData(raw); rebuildLinks();
-    S.loadedAt = new Date(); S.status = "ready"; S.stale = false; S.session = null;
-    idb.set("data", raw);
+    S.loadedAt = new Date(raw.t); S.status = "ready"; S.stale = false; S.session = null;
+    if (!STATIC) idb.set("data", raw);
   } catch (e) {
     if (!isRetry && e && e.retryable) { await new Promise((r) => setTimeout(r, 1500 + Math.random() * 800)); return load(true); }
     if (S.status !== "ready") { S.status = "error"; S.err = e; } else { S.err = e; }
@@ -903,10 +925,11 @@ function renderChrome() {
   $("#tipoWrap").innerHTML = ready ? tipoPicker() : "";
   renderFline();
   let cls = "", txt = "Notion collegato";
-  if (S.status === "loading" || S.refreshing) { cls = "busy"; txt = ready ? "Aggiornamento da Notion" : "Lettura da Notion"; }
+  if (S.status === "loading" || S.refreshing) { cls = "busy"; txt = STATIC ? (ready ? "Aggiornamento dei dati" : "Lettura dei dati") : ready ? "Aggiornamento da Notion" : "Lettura da Notion"; }
   else if (S.status === "nomcp") { cls = "off"; txt = ready ? "Dati in cache (Notion non disponibile)" : "Notion non disponibile"; }
   else if (S.status === "error") { cls = "err"; txt = "Lettura non riuscita"; }
   else if (S.err) { cls = "err"; txt = "Aggiornamento non riuscito"; }
+  else if (STATIC) { const d = new Date((S.raw && S.raw.t) || Date.now()); cls = ""; txt = "Esportazione Notion del " + pad(d.getDate()) + "/" + pad(d.getMonth() + 1) + " " + pad(d.getHours()) + ":" + pad(d.getMinutes()); }
   else if (!mcp) { cls = "off"; txt = "Dati in cache"; }
   let extra = "";
   if (ready) {
@@ -970,7 +993,7 @@ function syncFocusChip() {
 function renderView() {
   teardownGraph();
   const el = $("#view"); viewAfter = null; syncFocusChip();
-  if (S.status === "loading" && !D.atoms.size) { el.innerHTML = stateBox("Lettura del database", "Carico atomi, corsi, sezioni e risorse da Notion. Alla prima apertura Claude ti chiede il consenso per accedere a Notion."); return; }
+  if (S.status === "loading" && !D.atoms.size) { el.innerHTML = stateBox("Lettura del database", STATIC ? "Carico atomi, corsi, sezioni e risorse." : "Carico atomi, corsi, sezioni e risorse da Notion. Alla prima apertura Claude ti chiede il consenso per accedere a Notion."); return; }
   if (S.status === "nomcp" && !D.atoms.size) { el.innerHTML = stateBox("Notion non è disponibile in questa vista", "La pagina legge il database tramite i connettori di Claude. Aprila da claude.ai o dall'app Claude con il connettore Notion attivo."); return; }
   if (S.status === "error" && !D.atoms.size) { const d = describeError(S.err); el.innerHTML = stateBox(d.t, d.d, '<button class="' + (d.retry ? "solid" : "ghost") + '" type="button" data-act="retryLoad">' + (d.retry ? "Riprova" : "Ricarica") + "</button>"); return; }
   const v = V[S.tab] || V.corsi;
@@ -1325,7 +1348,7 @@ function crawlStatus(scope) {
   const cov = coverage(scope);
   if (CR.err) return "Lettura interrotta: " + describeError(CR.err).t;
   if (CR.running) return "Lettura dei collegamenti: " + CR.done + " / " + CR.total;
-  if (!mcp) return cov + " / " + scope.length + " atomi con collegamenti letti (cache)";
+  if (!mcp) return cov + " / " + scope.length + (STATIC ? " atomi con collegamenti nell'esportazione" : " atomi con collegamenti letti (cache)");
   return cov >= scope.length ? "Collegamenti letti per tutti i " + scope.length + " atomi" + (CR.failed ? " (" + CR.failed + " non leggibili)" : "") : cov + " / " + scope.length + " atomi con collegamenti letti";
 }
 function updateCrawlUI() { const sc = S.tab === "qualita" ? atomsIn({ tipi: null, text: false }) : crawlTargets(); document.querySelectorAll("[data-crawl]").forEach((e) => { e.textContent = crawlStatus(sc); }); }
@@ -1708,6 +1731,7 @@ function openCard(id) {
 function persistLater(c) { c.sync = "pending"; writeChain = writeChain.then(() => persist(c)); renderChrome(); }
 async function persist(c) {
   c.sync = "pending";
+  if (STATIC) { LV[c.id] = c.livello; store.set("lv", LV); c.sync = "saved"; renderChrome(); return; }
   try { await mcp.callTool(SERVER, "notion-update-page", { page_id: c.url, command: "update_properties", properties: { "Livello": c.livello } }, { cache: false }); c.sync = "saved"; }
   catch (e) { c.sync = "error"; }
   renderChrome();
@@ -2053,7 +2077,7 @@ $("#q").addEventListener("keydown", (e) => {
 function pickSugg(id) { $("#sugg").hidden = true; openAtom(id); }
 document.addEventListener("mousedown", (e) => { const b = e.target.closest("[data-act='sugg']"); if (b) { e.preventDefault(); pickSugg(b.dataset.id); } else if (!e.target.closest(".search")) $("#sugg").hidden = true; });
 $("#scrim").addEventListener("click", closeDrawer);
-$("#reload").addEventListener("click", () => { if (mcp) load(false); });
+$("#reload").addEventListener("click", () => { if (mcp || STATIC) load(false); });
 window.addEventListener("hashchange", () => { const t = location.hash.slice(1); if (TABS.some((x) => x[0] === t) && t !== S.tab) { S.tab = t; store.set("tab", t); renderChrome(); renderView(); } });
 document.addEventListener("keydown", (e) => {
   if (e.metaKey || e.ctrlKey || e.altKey) return;
@@ -2104,7 +2128,8 @@ renderChrome(); renderView();
   (bodies || []).forEach((b) => { if (b && b.id) B.set(b.id, Object.assign(b, { links: parseLinks(b.body || "") })); });
   if (cached && cached.atomi) { S.raw = cached; buildData(cached); rebuildLinks(); S.status = "ready"; S.stale = true; S.loadedAt = new Date(cached.t || Date.now()); renderAll(); }
   try { mcp = window.claude && window.claude.use ? await window.claude.use("mcp") : null; } catch (e) { mcp = null; }
-  if (!mcp) { if (S.status !== "ready") S.status = "nomcp"; renderAll(); return; }
+  /* fuori da Claude non c'è il connettore Notion: si leggono i JSON esportati in data/ */
+  if (!mcp) STATIC = true;
   load(false);
 })();
 window.__studio = { S, D, B, L, G, CR, computeAudit, buildGraph, parseLinks, toks, labelMatches, md, linkify, orderAtoms, reportMd };
