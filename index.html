@@ -118,6 +118,7 @@ nav.tabs .gback:hover { border-color:var(--accent); color:var(--accent); }
 nav.tabs .gback:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
 nav.tabs .badge { background:var(--bad); color:#fff; border-radius:999px; font-size:.68rem; padding:1px 6px; margin-left:6px; letter-spacing:0; }
 
+@media (max-width:640px) { nav.tabs button { padding:9px 4px; font-size:.6rem; letter-spacing:.03em; flex:1 1 auto; text-align:center; } nav.tabs .badge { margin-left:3px; padding:1px 4px; } nav.tabs .gback { margin-left:auto; padding:5px 10px; } }
 /* chips, tags, dots */
 .chips { display:flex; flex-wrap:wrap; gap:6px; }
 .chip { background:var(--surface); border:1px solid var(--rule); border-radius:999px; padding:3px 11px; font-size:.84rem; }
@@ -389,7 +390,7 @@ const tcolOf = (tipo) => TCOL[tipo] || TCOL_ALT;
 const tdot = (tipo, cls) => '<span class="tdot' + (cls ? " " + cls : "") + '" style="--tc:' + tcolOf(tipo) + '" aria-hidden="true"></span>';
 const emojiOf = (t) => (String(t || "").match(/\p{Extended_Pictographic}(?:\uFE0F|\u200D\p{Extended_Pictographic})*/u) || [""])[0];
 const TTL = 7 * 864e5, TTL_BOIL = 12 * 36e5, CONC = 4, WEAK_N = 20, LIST_STEP = 120;
-const TABS = [["corsi", "Galassie"], ["atomi", "Stelle"], ["grafo", "Cosmo"], ["flash", "Esplora"], ["qualita", "Osservatorio"]];
+const TABS = [["corsi", "Galassie"], ["atomi", "Stelle"], ["grafo", "Universo"], ["flash", "Esplora"], ["qualita", "Osservatorio"]];
 
 /* ============ utilità ============ */
 const $ = (s) => document.querySelector(s);
@@ -993,11 +994,11 @@ function onFilterChange(openId) {
   else if (S.tab !== "grafo") renderView();
 }
 let viewAfter = null;
-/* chip «Percorso: atomo ✕» nella riga delle tab, a destra: sostituisce la riga separata con «Torna al grafo» */
+/* chip «Percorso: atomo ✕» nella riga delle tab, a destra: sostituisce la riga separata con «Torna all'universo» */
 function focusChipHtml() {
   const f = S.tab === "grafo" && S.g.focus && D.atoms.get(S.g.focus);
   if (!f) return "";
-  return '<button type="button" class="gback" data-act="gClear" title="Torna al grafo (Esc)">← Torna al grafo</button>';
+  return '<button type="button" class="gback" data-act="gClear" title="Torna all\'universo (Esc)">← Torna all\'universo</button>';
 }
 function syncFocusChip() {
   const nav = $("#tabs"); if (!nav) return;
@@ -1063,13 +1064,13 @@ function coursePage(c) {
       '<div class="rrow"><span>' + esc(r.nome) + '</span><a href="' + esc(r.url) + '" target="_blank" rel="noopener">Apri in Notion</a></div>').join("") + "</div></div>").join("")
     : '<p class="note">Nessuna risorsa collegata a questa galassia nel database risorse.</p>';
   return '<div class="stack"><div class="crumb"><button class="ghost" type="button" data-act="corso" data-v="*">‹ Tutte le galassie</button><div class="btnrow">' +
-    '<button class="ghost" type="button" data-act="go" data-v="flash">Studia con le flashcard</button><button class="ghost" type="button" data-act="go" data-v="grafo">Cosmo della galassia</button>' +
+    '<button class="ghost" type="button" data-act="go" data-v="flash">Studia con le flashcard</button><button class="ghost" type="button" data-act="go" data-v="grafo">Universo della galassia</button>' +
     '<a class="ghost" style="text-decoration:none" href="' + esc(c.url) + '" target="_blank" rel="noopener">Apri in Notion</a></div></div>' +
     '<div><h2 class="sec" style="font-size:1.8rem">' + esc(c.nome) + (c.anno != null ? ' <small class="muted" style="font-size:.9rem">· anno ' + esc(c.anno) + "</small>" : "") + "</h2>" +
     '<div class="stats"><div class="stat"><span class="k">Stelle</span><span class="v tn">' + vis.length + '</span></div><div class="stat"><span class="k">Sezioni</span><span class="v tn">' + secs.filter((s) => s.atoms.some((a) => okA(a) && a.corsi.includes(c.id))).length +
     '</span></div><div class="stat"><span class="k">Risorse</span><span class="v tn">' + c.risorse.length + '</span></div><div class="stat"><span class="k">Livello medio</span><span class="v tn">' + avg.toFixed(1).replace(".", ",") + "<small> / 5</small></span></div></div>" +
     (vis.length ? '<div class="bar" role="img" aria-label="Distribuzione per livello">' + [1, 2, 3, 4, 5].map((k) => d[k] ? '<i style="flex:' + d[k] + ';background:var(--lv' + k + ')"></i>' : "").join("") + "</div>" : "") + "</div>" +
-    '<section><h2 class="sec">Percorso</h2>' + (L.out.size ? '<p class="note">Dentro ogni sezione le stelle seguono i collegamenti: prima ciò che viene citato, poi chi lo usa.</p>' : '<p class="note">Ordine provvisorio per tipologia. Apri la scheda Cosmo o Osservatorio per leggere i collegamenti: l\'ordine diventerà per dipendenza.</p>') + html + "</section>" +
+    '<section><h2 class="sec">Percorso</h2>' + (L.out.size ? '<p class="note">Dentro ogni sezione le stelle seguono i collegamenti: prima ciò che viene citato, poi chi lo usa.</p>' : '<p class="note">Ordine provvisorio per tipologia. Apri la scheda Universo o Osservatorio per leggere i collegamenti: l\'ordine diventerà per dipendenza.</p>') + html + "</section>" +
     '<section><h2 class="sec">Risorse</h2>' + risorse + "</section></div>";
 }
 
@@ -1148,7 +1149,7 @@ function renderDrawer(keepScroll) {
     '<div class="dmeta"><span>' + (corsiNames(a).map(esc).join(", ") || "Senza galassia") + "</span>" + (sezNames(a).length ? "<span>· " + sezNames(a).map(esc).join(", ") + "</span>" : "") + "</div>" +
     '<div class="back" id="dbody">' + bodyHtml + "</div>" +
     (a.tags.length ? '<div class="tags">' + a.tags.map((t) => '<button type="button" data-act="tagGo" data-v="' + esc(t) + '">#' + esc(t) + "</button>").join("") + "</div>" : "") + links +
-    '<div class="dacts"><button class="ghost" type="button" data-act="toGraph" data-id="' + a.id + '">Mostra nel grafo</button><a class="ghost" style="text-decoration:none" href="' + esc(a.url) + '" target="_blank" rel="noopener">Apri in Notion</a></div></div>';
+    '<div class="dacts"><button class="ghost" type="button" data-act="toGraph" data-id="' + a.id + '">Mostra nell\'universo</button><a class="ghost" style="text-decoration:none" href="' + esc(a.url) + '" target="_blank" rel="noopener">Apri in Notion</a></div></div>';
   if (keepScroll && st) el.querySelector(".db").scrollTop = st;
   typeset(el);
 }
@@ -1363,7 +1364,7 @@ V.grafo = () => {
   const tools = "" +
     (cov < scope.length && !CR.running ? '<button class="ghost sm" type="button" data-act="crawl">Leggi i collegamenti (' + (scope.length - cov) + ")</button>" : "");
   return '<div class="stack">' + (tools ? '<div><div class="gtools">' + lit + tools + "</div></div>" : "") +
-    '<div class="gpair" id="gpair" role="status" hidden></div><div class="gwrap" id="gw" role="img" aria-label="Cosmo: il grafo dei collegamenti tra stelle"><canvas id="gc"></canvas><div class="glegend">' + Object.keys(TCOL).map((t) => '<span class="lg">' + tdot(t) + t + '</span>').join("") +
+    '<div class="gpair" id="gpair" role="status" hidden></div><div class="gwrap" id="gw" role="img" aria-label="Universo: i collegamenti tra le stelle"><canvas id="gc"></canvas><div class="glegend">' + Object.keys(TCOL).map((t) => '<span class="lg">' + tdot(t) + t + '</span>').join("") +
     '</div><div class="gtip" id="gtip" hidden></div><div class="gempty" id="gempty" hidden></div></div>' +
     '<p class="gcmd">' + (f ? "Sotto i prerequisiti, sopra i dipendenti · " : "") +
     "Passa sopra: anteprima · Clic: seleziona e mostra i collegamenti · Doppio clic: apre la scheda (al tocco: tocca di nuovo la stella) · Clic sul vuoto: deseleziona" +
@@ -1382,7 +1383,7 @@ async function initGraph() {
   /* se la vista viene ridisegnata mentre d3 carica, vale solo l'ultima inizializzazione: niente gestori doppi */
   const seq = G.initSeq = (G.initSeq || 0) + 1;
   ensureCrawl();
-  try { await loadD3(); } catch (e) { gw.innerHTML = '<div class="box" style="border:0;height:100%">' + "<h3>Cosmo non disponibile</h3><p>Non riesco a caricare la libreria grafica (d3). Controlla la connessione e ricarica; la tabella nella scheda Stelle mostra gli stessi dati.</p></div>"; return; }
+  try { await loadD3(); } catch (e) { gw.innerHTML = '<div class="box" style="border:0;height:100%">' + "<h3>Universo non disponibile</h3><p>Non riesco a caricare la libreria grafica (d3). Controlla la connessione e ricarica; la tabella nella scheda Stelle mostra gli stessi dati.</p></div>"; return; }
   if (seq !== G.initSeq || $("#gw") !== gw || S.tab !== "grafo") return;
   const d3 = window.d3; readColors();
   G.cv = $("#gc"); G.ctx = G.cv.getContext("2d"); G.sel = null; G.lock = null; G.hover = null;
@@ -2052,10 +2053,10 @@ function computeAudit() {
     add("cicli", "Cicli di dipendenza", "media", "Stelle che, seguendo i link, sono prerequisiti l'uno dell'altro: nessuno si può studiare per primo. I link reciproci diretti (A cita B e B cita A) non contano: valgono come «correlati». Di solito uno dei link va tolto o girato.", cicli, { link: true });
   }
   add("lab-prob", "Etichetta e destinazione non coincidono", "alta", "Il testo del link non assomiglia al titolo della stella di destinazione e esiste un'altra stella il cui titolo contiene quelle parole: probabile puntamento sbagliato.", etichProb, { link: true });
-  add("dominio", "Link con dominio sbagliato", "alta", "Il link contiene l'id di una pagina Notion ma porta a un altro sito (di solito copiato da chatgpt.com): nel grafo conta, ma in Notion non si apre. Va reinserito come link alla pagina.", dominio, { link: true });
+  add("dominio", "Link con dominio sbagliato", "alta", "Il link contiene l'id di una pagina Notion ma porta a un altro sito (di solito copiato da chatgpt.com): nell'universo conta, ma in Notion non si apre. Va reinserito come link alla pagina.", dominio, { link: true });
   add("fuori", "Link a pagine fuori dal database atomi", "alta", "Il link porta a una pagina che non è una stella e non è nota (galassia, sezione, risorsa): spesso una stella eliminata o spostata.", fuori, { link: true });
   add("self", "Link a se stesso", "media", "La stella cita se stessa.", self, { link: true });
-  add("valboil", "Stelle validate che citano stelle nel bollitore", "media", "Con «Solo validati» questi collegamenti spariscono dal grafo e dal lettore.", valBoil, { link: true });
+  add("valboil", "Stelle validate che citano stelle nel bollitore", "media", "Con «Solo validati» questi collegamenti spariscono dall'universo e dal lettore.", valBoil, { link: true });
   add("lab-sin", "Etichetta diversa dal titolo, senza alternative", "info", "Nessun'altra stella corrisponde alle parole del link: di solito è un sinonimo o una forma abbreviata. Da rivedere a campione.", etichSin, { link: true });
   add("non-stella", "Link a sezioni, galassie o risorse", "info", "Il link non porta a una stella ma a un'altra tabella del database.", paginaNonStella, { link: true });
   add("cross", "Link verso stelle di un'altra galassia", "info", "Spesso legittimi (concetti condivisi), ma vale la pena controllarli.", cross, { link: true });
@@ -2069,8 +2070,8 @@ function computeAudit() {
     });
   }
   const gate = (id, title, sev, desc, items) => add(id, title, sev, desc + (full ? "" : " (Serve la lettura di tutti gli atomi: " + covAll + " / " + allOk.length + ")"), items, { link: true, needsFull: !full });
-  add("non-letti", "Stelle non leggibili", "media", "Dopo tre tentativi il corpo non è stato letto: i loro collegamenti mancano dal grafo e dai controlli. Riprova con «Rileggi tutto».", unread.map((a) => I(a)), { link: true });
-  gate("isolati", "Stelle isolate", "media", "Non citano e non sono citati: sono fuori dal grafo.", isol);
+  add("non-letti", "Stelle non leggibili", "media", "Dopo tre tentativi il corpo non è stato letto: i loro collegamenti mancano dall'universo e dai controlli. Riprova con «Rileggi tutto».", unread.map((a) => I(a)), { link: true });
+  gate("isolati", "Stelle isolate", "media", "Non citano e non sono citati: sono fuori dall'universo.", isol);
   gate("no-out", "Stelle che non citano nessun'altra stella", "info", "Una definizione senza nemmeno un termine collegato è raro: controlla se mancano i link.", noOut);
   gate("no-in", "Stelle che nessuno cita", "info", "Utile per trovare stelle che dovrebbero essere richiamate da altri.", noIn);
   AUD.key = key; AUD.res = { cats, covScope: have.length, scopeN: scope.length, covAll, allN: allOk.length, full };
@@ -2095,7 +2096,7 @@ V.qualita = () => {
     }).join("") + "</section>";
   }).join("");
   return '<div class="stack"><div><h2 class="sec">Controllo di collegamenti e puntamenti</h2>' +
-    '<p class="note">I «puntamenti» sono le relazioni Notion (galassia, sezione); gli «archi» del grafo sono i link scritti nel corpo delle stelle. Il controllo vale per la sorgente e la galassia scelta in alto, e confronta ogni link con il titolo della stella di destinazione.</p>' +
+    '<p class="note">I «puntamenti» sono le relazioni Notion (galassia, sezione); gli «archi» dell\'universo sono i link scritti nel corpo delle stelle. Il controllo vale per la sorgente e la galassia scelta in alto, e confronta ogni link con il titolo della stella di destinazione.</p>' +
     '<div class="cov" role="img" aria-label="Corpi letti"><i style="width:' + pct + '%"></i></div><p class="note"><span data-crawl>' + crawlStatus(scope) + '</span> &nbsp;' +
     (mcp && !CR.running ? (cov < scope.length ? '<button class="ghost sm" type="button" data-act="crawl">Leggi i collegamenti mancanti</button> ' : "") + '<button class="ghost sm" type="button" data-act="recrawl">Rileggi tutto</button> ' : "") +
     '<button class="ghost sm" type="button" data-act="export">Copia il report</button></p><div id="reportBox"></div>' +
