@@ -957,7 +957,7 @@ function renderChrome() {
 function renderAll() { renderChrome(); renderView(); renderDrawer(); }
 function coursePicker() {
   const sel = selCorsi(), cnt = new Map(); D.atoms.forEach((a) => { if (srcOk(a)) a.corsi.forEach((c) => cnt.set(c, (cnt.get(c) || 0) + 1)); });
-  const lab = !sel.size ? "Tutti" : sel.size === 1 ? (D.corsi.get([...sel][0]) || {}).nome : sel.size + " corsi";
+  const lab = !sel.size ? "Tutti" : sel.size === 1 ? (D.corsi.get([...sel][0]) || {}).nome : sel.size + " galassie";
   let lastY = null;
   return '<details class="cpick" id="cpick"><summary><span class="k">Galassie</span><span class="v">' + esc(lab) + '</span></summary><div class="cpanel" role="group" aria-label="Galassie da mostrare">' +
     '<label class="call"><input type="checkbox" data-pc="*"' + (!sel.size ? " checked" : "") + "><span>Tutte le galassie</span></label>" +
@@ -976,7 +976,7 @@ function tipoPicker() {
 function renderFline() {
   const el = $("#fline"); if (!el) return;
   const sel = selCorsi(), parts = [];
-  if (sel.size) parts.push(["corsi", "Corsi: <b>" + [...sel].map((id) => esc((D.corsi.get(id) || {}).nome || "")).join(", ") + "</b>"]);
+  if (sel.size) parts.push(["corsi", "Galassie: <b>" + [...sel].map((id) => esc((D.corsi.get(id) || {}).nome || "")).join(", ") + "</b>"]);
   if (S.tipi.size) parts.push(["tipi", "Tipologia: <b>" + [...S.tipi].map(esc).join(", ") + "</b>"]);
   if (aqN()) parts.push(["aq", "Ricerca: <b>«" + esc(S.aq.trim()) + "»</b>"]);
   el.hidden = !parts.length;
@@ -1007,7 +1007,7 @@ function syncFocusChip() {
 function renderView() {
   teardownGraph();
   const el = $("#view"); viewAfter = null; syncFocusChip();
-  if (S.status === "loading" && !D.atoms.size) { el.innerHTML = stateBox("Lettura del database", STATIC ? "Carico stelle, corsi, sezioni e risorse." : "Carico stelle, corsi, sezioni e risorse da Notion. Alla prima apertura Claude ti chiede il consenso per accedere a Notion."); return; }
+  if (S.status === "loading" && !D.atoms.size) { el.innerHTML = stateBox("Lettura del database", STATIC ? "Carico stelle, galassie, sezioni e risorse." : "Carico stelle, galassie, sezioni e risorse da Notion. Alla prima apertura Claude ti chiede il consenso per accedere a Notion."); return; }
   if (S.status === "nomcp" && !D.atoms.size) { el.innerHTML = stateBox("Notion non è disponibile in questa vista", "La pagina legge il database tramite i connettori di Claude. Aprila da claude.ai o dall'app Claude con il connettore Notion attivo."); return; }
   if (S.status === "error" && !D.atoms.size) { const d = describeError(S.err); el.innerHTML = stateBox(d.t, d.d, '<button class="' + (d.retry ? "solid" : "ghost") + '" type="button" data-act="retryLoad">' + (d.retry ? "Riprova" : "Ricarica") + "</button>"); return; }
   const v = V[S.tab] || V.corsi;
@@ -1055,13 +1055,13 @@ function coursePage(c) {
   const loose = vis.filter((a) => !inSec.has(a.id));
   if (loose.length) html += '<details class="sect" open><summary><span>Senza sezione</span><span class="tag warn">da sistemare</span><span class="cnt">' + loose.length + " stelle</span></summary>" + orderAtoms(loose).map(atomRow).join("") + "</details>";
   if (!vis.length && (S.tipi.size || aqN())) html = stateBox("Nessuna stella corrisponde ai filtri", "Togli la ricerca o la tipologia nella riga dei filtri attivi, in alto.");
-  else if (!vis.length) html = stateBox("Nessuna stella in questa sorgente", S.src === "val" ? "Questo corso non ha ancora stelle validate. Scegli «Tutti» nel filtro Stelle per vedere anche quelle in attesa di revisione." : "Nessuna stella corrisponde.");
+  else if (!vis.length) html = stateBox("Nessuna stella in questa sorgente", S.src === "val" ? "Questa galassia non ha ancora stelle validate. Scegli «Tutti» nel filtro Stelle per vedere anche quelle in attesa di revisione." : "Nessuna stella corrisponde.");
   const d = distr(vis), avg = vis.length ? vis.reduce((s, a) => s + a.livello, 0) / vis.length : 0;
   const rg = new Map(); c.risorse.forEach((r) => (rg.get(r.tipo) || rg.set(r.tipo, []).get(r.tipo)).push(r));
   const risorse = c.risorse.length ? [...rg.entries()].sort((a, b) => collator.compare(a[0], b[0])).map(([t, list]) =>
     '<div class="rgroup"><h3 class="sub2">' + esc(t) + " · " + list.length + '</h3><div class="rlist">' + list.sort((a, b) => collator.compare(a.nome, b.nome)).map((r) =>
       '<div class="rrow"><span>' + esc(r.nome) + '</span><a href="' + esc(r.url) + '" target="_blank" rel="noopener">Apri in Notion</a></div>').join("") + "</div></div>").join("")
-    : '<p class="note">Nessuna risorsa collegata a questo corso nel database risorse.</p>';
+    : '<p class="note">Nessuna risorsa collegata a questa galassia nel database risorse.</p>';
   return '<div class="stack"><div class="crumb"><button class="ghost" type="button" data-act="corso" data-v="*">‹ Tutte le galassie</button><div class="btnrow">' +
     '<button class="ghost" type="button" data-act="go" data-v="flash">Studia con le flashcard</button><button class="ghost" type="button" data-act="go" data-v="grafo">Cosmo della galassia</button>' +
     '<a class="ghost" style="text-decoration:none" href="' + esc(c.url) + '" target="_blank" rel="noopener">Apri in Notion</a></div></div>' +
@@ -1094,7 +1094,7 @@ function renderAList() {
   else {
     const m = new Map();
     list.forEach((a) => {
-      const keys = S.group === "corso" ? (corsiNames(a).length ? corsiNames(a) : ["Senza corso"]) : S.group === "sezione" ? (sezNames(a).length ? sezNames(a) : ["Senza sezione"]) : [a.tipo];
+      const keys = S.group === "corso" ? (corsiNames(a).length ? corsiNames(a) : ["Senza galassia"]) : S.group === "sezione" ? (sezNames(a).length ? sezNames(a) : ["Senza sezione"]) : [a.tipo];
       keys.forEach((k) => (m.get(k) || m.set(k, []).get(k)).push(a));
     });
     groups = [...m.entries()].sort((a, b) => collator.compare(a[0], b[0]));
@@ -1106,7 +1106,7 @@ function renderAList() {
     for (const a of items) { if (shown >= S.limit) break; body += row(a); shown++; }
   }
   $("#acount") && ($("#acount").textContent = total + (total === 1 ? " stella" : " stelle"));
-  el.innerHTML = total ? '<div class="bk-wrap"><table class="bk"><thead><tr>' + th("titolo", "Titolo") + th("tipo", "Tipo", "opt-col") + th("corso", "Corso", "opt-col") + th("stato", "Stato") + "</tr></thead><tbody>" + body + "</tbody></table></div>" +
+  el.innerHTML = total ? '<div class="bk-wrap"><table class="bk"><thead><tr>' + th("titolo", "Titolo") + th("tipo", "Tipo", "opt-col") + th("corso", "Galassia", "opt-col") + th("stato", "Stato") + "</tr></thead><tbody>" + body + "</tbody></table></div>" +
     (shown < total ? '<p class="note" style="margin-top:10px"><button class="ghost" type="button" data-act="more">Mostra altri ' + Math.min(LIST_STEP, total - shown) + "</button> &nbsp;" + shown + " di " + total + "</p>" : "")
     : stateBox("Nessuna stella", "Nessuna stella corrisponde ai filtri." + (selCorsi().size || S.tipi.size || aqN() ? " Puoi toglierli dalla riga dei filtri attivi, in alto." : "") + (S.src === "val" ? " Con «Tutti» nel filtro Stelle includi anche le stelle non ancora validate." : ""));
   typeset(el);
@@ -1145,7 +1145,7 @@ function renderDrawer(keepScroll) {
   el.innerHTML = '<div class="dh"><div class="btnrow">' + (S.hist.length ? '<button class="ghost sm" type="button" data-act="back">‹ Indietro</button>' : "") + '</div><button class="ghost sm" type="button" data-act="closeDrawer" aria-label="Chiudi">Chiudi ✕</button></div>' +
     '<div class="db"><div class="dmeta"><span class="tag">' + esc(a.tipo) + "</span>" + (a.valid ? '<span class="tag ok">Validato</span>' : '<span class="tag warn">Bollitore</span>' + (a.andrea ? ' <span class="tag">Andrea ok</span>' : "") + (a.omar ? ' <span class="tag">Omar ok</span>' : "")) + (a.ai ? '<span class="tag">Revisione AI</span>' : "") + dots(a.livello) + "</div>" +
     '<h2 class="dt">' + titleHtml(a.titolo) + "</h2>" +
-    '<div class="dmeta"><span>' + (corsiNames(a).map(esc).join(", ") || "Senza corso") + "</span>" + (sezNames(a).length ? "<span>· " + sezNames(a).map(esc).join(", ") + "</span>" : "") + "</div>" +
+    '<div class="dmeta"><span>' + (corsiNames(a).map(esc).join(", ") || "Senza galassia") + "</span>" + (sezNames(a).length ? "<span>· " + sezNames(a).map(esc).join(", ") + "</span>" : "") + "</div>" +
     '<div class="back" id="dbody">' + bodyHtml + "</div>" +
     (a.tags.length ? '<div class="tags">' + a.tags.map((t) => '<button type="button" data-act="tagGo" data-v="' + esc(t) + '">#' + esc(t) + "</button>").join("") + "</div>" : "") + links +
     '<div class="dacts"><button class="ghost" type="button" data-act="toGraph" data-id="' + a.id + '">Mostra nel grafo</button><a class="ghost" style="text-decoration:none" href="' + esc(a.url) + '" target="_blank" rel="noopener">Apri in Notion</a></div></div>';
@@ -1494,7 +1494,7 @@ function startSim() {
   const gs = $("#gstat");
   if (gs) gs.textContent = !N ? (G.filtered ? "Nessuna stella contiene «" + S.aq.trim() + "»" : "Nessuna stella da mostrare") :
     (G.filtered ? G.src.length + " trovati" + (S.g.dmax ? " · " + (N - G.src.length) + (S.g.dmax >= 99 ? " collegati" : " entro " + S.g.dmax + (S.g.dmax === 1 ? " arco" : " archi")) : "") + " · " : N + " nodi · ") +
-    G.links.length + " collegamenti" + (G.isolated && !G.filtered ? " · " + G.isolated + " senza collegamenti" + (G.isoOut ? " (" + G.isoOut + " collegati solo a stelle fuori da corso, sorgente o tipologia scelti)" : "") : "") + (!G.links.length && N ? " · nessun collegamento letto finora" : "");
+    G.links.length + " collegamenti" + (G.isolated && !G.filtered ? " · " + G.isolated + " senza collegamenti" + (G.isoOut ? " (" + G.isoOut + " collegati solo a stelle fuori da galassia, sorgente o tipologia scelti)" : "") : "") + (!G.links.length && N ? " · nessun collegamento letto finora" : "");
 }
 function fitView(focusId) {
   const d3 = window.d3, ns = G.nodes; if (!ns.length || !G.zoom) return;
@@ -1789,7 +1789,7 @@ function drawNow() {
     /* dal corso più grande al più piccolo; un nome che si sovrapporrebbe a uno già scritto viene saltato */
     const placed = [], pad = 4 / k, lh = 19 / k;
     [...cen.entries()].filter(([, o]) => o.n >= 3).sort((a, b) => b[1].n - a[1].n).forEach(([cid, o]) => {
-      const nm = cid === "-" ? "Senza corso" : ((D.corsi.get(cid) || {}).nome || ""), y = o.y / o.n, hw = ctx.measureText(nm).width / 2 + pad;
+      const nm = cid === "-" ? "Senza galassia" : ((D.corsi.get(cid) || {}).nome || ""), y = o.y / o.n, hw = ctx.measureText(nm).width / 2 + pad;
       const lo = -tf.x / k + hw + 4 / k, hi = (w - tf.x) / k - hw - 4 / k, x = lo > hi ? (lo + hi) / 2 : Math.min(hi, Math.max(lo, o.x / o.n));
       if (placed.some((r) => Math.abs(r.x - x) < r.hw + hw && Math.abs(r.y - y) < lh)) return;
       placed.push({ x, y, hw });
@@ -1897,7 +1897,7 @@ async function persist(c) {
 }
 /* azzeramento dei livelli: vale per i corsi scelti nel filtro in alto (nessun corso = tutti) */
 const resetScope = () => { const sel = selCorsi(); return [...D.atoms.values()].filter((a) => corsoOk(a, sel)); };
-const resetLabel = () => { const sel = selCorsi(); return !sel.size ? "tutte le galassie" : sel.size === 1 ? (D.corsi.get([...sel][0]) || {}).nome : sel.size + " corsi"; };
+const resetLabel = () => { const sel = selCorsi(); return !sel.size ? "tutte le galassie" : sel.size === 1 ? (D.corsi.get([...sel][0]) || {}).nome : sel.size + " galassie"; };
 function resetLevels() {
   const list = resetScope(), n = list.filter((a) => a.livello !== 1).length; if (!n) return;
   if (!window.confirm("Azzerare i livelli (" + resetLabel() + ")?\n" + n + (n === 1 ? " stella torna" : " stelle tornano") + " al livello 1. L'operazione non si può annullare.")) return;
@@ -1951,7 +1951,7 @@ function renderStudy() {
 function renderWeak() {
   const el = $("#weak"); if (!el) return; const v = atomsIn(); if (!v.length) { el.innerHTML = ""; return; }
   const list = v.slice().sort((a, b) => a.livello - b.livello || collator.compare(a.titolo, b.titolo)).slice(0, 8);
-  el.innerHTML = '<h2 class="sec">Da rafforzare</h2><div class="bk-wrap"><table class="bk"><thead><tr><th>Carta</th><th class="opt-col">Corso</th><th>Livello</th></tr></thead><tbody>' +
+  el.innerHTML = '<h2 class="sec">Da rafforzare</h2><div class="bk-wrap"><table class="bk"><thead><tr><th>Carta</th><th class="opt-col">Galassia</th><th>Livello</th></tr></thead><tbody>' +
     list.map((c) => '<tr tabindex="0" data-act="focus" data-id="' + c.id + '"' + (cur() && cur().c === c ? ' style="font-weight:600"' : "") + '><td class="t">' + glyph(c) + titleHtml(c.titolo) + '</td><td class="opt-col">' + esc(corsiNames(c).join(", ")) + "</td><td>" + dots(c.livello) + "</td></tr>").join("") + "</tbody></table></div>";
   typeset(el);
 }
@@ -1975,20 +1975,20 @@ function computeAudit() {
   const add = (id, title, sev, desc, items, o) => cats.push(Object.assign({ id, title, sev, desc, items }, o || {}));
   const I = (a, text, refs, ext) => ({ a, text: text || "", refs: refs || [], ext });
   /* puntamenti (relazioni Notion): non servono i corpi */
-  add("no-corso", "Stelle senza corso", "alta", "Nessun corso collegato: non compaiono in nessuna pagina corso." + (selCorsi().size ? " Controllo fatto su tutti i corsi." : ""), allSrc.filter((a) => !a.corsi.length).map((a) => I(a)));
+  add("no-corso", "Stelle senza galassia", "alta", "Nessuna galassia collegata: non compaiono in nessuna pagina galassia." + (selCorsi().size ? " Controllo fatto su tutte le galassie." : ""), allSrc.filter((a) => !a.corsi.length).map((a) => I(a)));
   const rotti = [], sezAltro = [];
   scope.forEach((a) => {
-    a.corsi.filter((c) => !D.corsi.has(c)).forEach(() => rotti.push(I(a, "collegato a un corso che non riesco a leggere")));
+    a.corsi.filter((c) => !D.corsi.has(c)).forEach(() => rotti.push(I(a, "collegata a una galassia che non riesco a leggere")));
     a.sezioni.forEach((sid) => {
       const s = D.sezioni.get(sid);
       if (!s) rotti.push(I(a, "collegato a una sezione che non riesco a leggere"));
-      else if (!s.corso) sezAltro.push(I(a, "la sezione «" + s.nome + "» non ha un corso"));
-      else if (a.corsi.length && !a.corsi.includes(s.corso)) sezAltro.push(I(a, "sezione «" + s.nome + "» del corso " + (D.corsi.get(s.corso) || {}).nome + ", ma la stella è in " + corsiNames(a).join(", ")));
+      else if (!s.corso) sezAltro.push(I(a, "la sezione «" + s.nome + "» non ha una galassia"));
+      else if (a.corsi.length && !a.corsi.includes(s.corso)) sezAltro.push(I(a, "sezione «" + s.nome + "» della galassia " + (D.corsi.get(s.corso) || {}).nome + ", ma la stella è in " + corsiNames(a).join(", ")));
     });
   });
-  add("sez-altro", "Sezione di un corso diverso dalla stella", "alta", "Il corso della sezione non è fra i corsi della stella: o la sezione è sbagliata o manca il corso.", sezAltro);
-  add("rel-rotte", "Relazioni verso pagine non leggibili", "alta", "Corso o sezione collegati che non risultano nelle viste Notion (pagina eliminata o non condivisa).", rotti);
-  add("no-sez", "Stelle senza sezione", "media", "Non compaiono nel percorso del corso, solo nel blocco «Senza sezione».", scope.filter((a) => a.corsi.length && !a.sezioni.length).map((a) => I(a, corsiNames(a).join(", "))));
+  add("sez-altro", "Sezione di una galassia diversa dalla stella", "alta", "La galassia della sezione non è fra le galassie della stella: o la sezione è sbagliata o manca la galassia.", sezAltro);
+  add("rel-rotte", "Relazioni verso pagine non leggibili", "alta", "Galassia o sezione collegate che non risultano nelle viste Notion (pagina eliminata o non condivisa).", rotti);
+  add("no-sez", "Stelle senza sezione", "media", "Non compaiono nel percorso della galassia, solo nel blocco «Senza sezione».", scope.filter((a) => a.corsi.length && !a.sezioni.length).map((a) => I(a, corsiNames(a).join(", "))));
   add("no-tag", "Stelle senza tag", "info", "Senza tag sono più difficili da ritrovare nel database.", scope.filter((a) => !a.tags.length).map((a) => I(a)));
   /* quasi duplicati */
   const dup = [], seenP = new Set(), inScope = new Set(scope.map((a) => a.id));
@@ -1998,7 +1998,7 @@ function computeAudit() {
       const b = D.atoms.get(id), pk = a.id < b.id ? a.id + b.id : b.id + a.id; if (seenP.has(pk)) return; seenP.add(pk);
       if (!sharesCourse(a, b) && a.norm !== b.norm) return;
       let inter = 0; a.tk.forEach((t) => { if (b.tk.has(t)) inter++; }); const uni = a.tk.size + b.tk.size - inter;
-      if (uni && (inter / uni >= 0.8 || a.norm === b.norm)) dup.push(I(a, "quasi uguale a «" + b.plain + "» (" + b.tipo + (sharesCourse(a, b) ? "" : ", altro corso") + ")", [b]));
+      if (uni && (inter / uni >= 0.8 || a.norm === b.norm)) dup.push(I(a, "quasi uguale a «" + b.plain + "» (" + b.tipo + (sharesCourse(a, b) ? "" : ", altra galassia") + ")", [b]));
     });
   });
   add("dup", "Titoli quasi duplicati", "media", "Stesse parole chiave nel titolo. Può essere un doppione da fondere, oppure due stelle (es. teoria e metodo) che andrebbero almeno collegati.", dup);
@@ -2031,7 +2031,7 @@ function computeAudit() {
         }
         if (a.corsi.length && t.corsi.length && !sharesCourse(a, t)) cross.push(I(a, "«" + l.label + "» → «" + t.plain + "» (" + corsiNames(t).join(", ") + ")", [t]));
         if (a.valid && !t.valid) valBoil.push(I(a, "cita «" + t.plain + "», che è ancora nel bollitore", [t]));
-      } else if (D.known.has(l.to)) paginaNonStella.push(I(a, "«" + l.label + "» punta a " + (D.sezioni.has(l.to) ? "una sezione" : D.corsi.has(l.to) ? "un corso" : "una risorsa") + ", non a una stella", null, "https://www.notion.so/" + l.to));
+      } else if (D.known.has(l.to)) paginaNonStella.push(I(a, "«" + l.label + "» punta a " + (D.sezioni.has(l.to) ? "una sezione" : D.corsi.has(l.to) ? "una galassia" : "una risorsa") + ", non a una stella", null, "https://www.notion.so/" + l.to));
       else fuori.push(I(a, "«" + (l.label || "?") + "» punta a una pagina non presente nel database atomi (eliminata, archiviata o esterna)", null, "https://www.notion.so/" + l.to));
     });
   });
@@ -2067,12 +2067,12 @@ function computeAudit() {
   }
   add("lab-prob", "Etichetta e destinazione non coincidono", "alta", "Il testo del link non assomiglia al titolo della stella di destinazione e esiste un'altra stella il cui titolo contiene quelle parole: probabile puntamento sbagliato.", etichProb, { link: true });
   add("dominio", "Link con dominio sbagliato", "alta", "Il link contiene l'id di una pagina Notion ma porta a un altro sito (di solito copiato da chatgpt.com): nel grafo conta, ma in Notion non si apre. Va reinserito come link alla pagina.", dominio, { link: true });
-  add("fuori", "Link a pagine fuori dal database atomi", "alta", "Il link porta a una pagina che non è una stella e non è nota (corso, sezione, risorsa): spesso una stella eliminata o spostata.", fuori, { link: true });
+  add("fuori", "Link a pagine fuori dal database atomi", "alta", "Il link porta a una pagina che non è una stella e non è nota (galassia, sezione, risorsa): spesso una stella eliminata o spostata.", fuori, { link: true });
   add("self", "Link a se stesso", "media", "La stella cita se stessa.", self, { link: true });
   add("valboil", "Stelle validate che citano stelle nel bollitore", "media", "Con «Solo validati» questi collegamenti spariscono dal grafo e dal lettore.", valBoil, { link: true });
   add("lab-sin", "Etichetta diversa dal titolo, senza alternative", "info", "Nessun'altra stella corrisponde alle parole del link: di solito è un sinonimo o una forma abbreviata. Da rivedere a campione.", etichSin, { link: true });
-  add("non-stella", "Link a sezioni, corsi o risorse", "info", "Il link non porta a una stella ma a un'altra tabella del database.", paginaNonStella, { link: true });
-  add("cross", "Link verso stelle di un altro corso", "info", "Spesso legittimi (concetti condivisi), ma vale la pena controllarli.", cross, { link: true });
+  add("non-stella", "Link a sezioni, galassie o risorse", "info", "Il link non porta a una stella ma a un'altra tabella del database.", paginaNonStella, { link: true });
+  add("cross", "Link verso stelle di un'altra galassia", "info", "Spesso legittimi (concetti condivisi), ma vale la pena controllarli.", cross, { link: true });
   /* completezza della rete: servono tutti i corpi */
   const unread = allOk.filter((a) => !B.has(a.id) && CR.failedSet.has(a.id)), full = covAll > 0 && covAll + unread.length >= allOk.length;
   const isol = [], noOut = [], noIn = [];
@@ -2109,14 +2109,14 @@ V.qualita = () => {
     }).join("") + "</section>";
   }).join("");
   return '<div class="stack"><div><h2 class="sec">Controllo di collegamenti e puntamenti</h2>' +
-    '<p class="note">I «puntamenti» sono le relazioni Notion (corso, sezione); gli «archi» del grafo sono i link scritti nel corpo delle stelle. Il controllo vale per la sorgente e il corso scelti in alto, e confronta ogni link con il titolo della stella di destinazione.</p>' +
+    '<p class="note">I «puntamenti» sono le relazioni Notion (galassia, sezione); gli «archi» del grafo sono i link scritti nel corpo delle stelle. Il controllo vale per la sorgente e la galassia scelta in alto, e confronta ogni link con il titolo della stella di destinazione.</p>' +
     '<div class="cov" role="img" aria-label="Corpi letti"><i style="width:' + pct + '%"></i></div><p class="note"><span data-crawl>' + crawlStatus(scope) + '</span> &nbsp;' +
     (mcp && !CR.running ? (cov < scope.length ? '<button class="ghost sm" type="button" data-act="crawl">Leggi i collegamenti mancanti</button> ' : "") + '<button class="ghost sm" type="button" data-act="recrawl">Rileggi tutto</button> ' : "") +
     '<button class="ghost sm" type="button" data-act="export">Copia il report</button></p><div id="reportBox"></div>' +
     (cov ? '<p class="note"><b>' + tot + "</b> segnalazioni da correggere in questa selezione.</p>" : "") + "</div>" + cats + "</div>";
 };
 function reportMd() {
-  const r = computeAudit(), out = ["# Controllo collegamenti stelle", "", "Sorgente: " + (S.src === "val" ? "solo validati" : S.src === "all" ? "validati e bollitore" : "solo bollitore") + " · corsi: " + (selCorsi().size ? [...selCorsi()].map((id) => (D.corsi.get(id) || {}).nome).join(", ") : "tutti") + " · corpi letti " + r.covScope + "/" + r.scopeN, ""];
+  const r = computeAudit(), out = ["# Controllo collegamenti stelle", "", "Sorgente: " + (S.src === "val" ? "solo validati" : S.src === "all" ? "validati e bollitore" : "solo bollitore") + " · galassie: " + (selCorsi().size ? [...selCorsi()].map((id) => (D.corsi.get(id) || {}).nome).join(", ") : "tutti") + " · corpi letti " + r.covScope + "/" + r.scopeN, ""];
   r.cats.forEach((c) => { if (!c.items.length) return; out.push("## " + c.title + " (" + c.items.length + ")", c.desc, ""); c.items.forEach((it) => out.push("- " + it.a.plain + (it.text ? " — " + it.text : "") + (it.refs.length ? " " + it.refs.map((x) => "[" + x.titolo + "]").join(", ") : "") + " <" + it.a.url + ">")); out.push(""); });
   return out.join("\n");
 }
