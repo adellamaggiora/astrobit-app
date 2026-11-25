@@ -389,7 +389,7 @@ const TICON = {
 const tipoIco = (t) => TICON[t] || EMO[t] || "";
 const emojiOf = (t) => (String(t || "").match(/\p{Extended_Pictographic}(?:\uFE0F|\u200D\p{Extended_Pictographic})*/u) || [""])[0];
 const TTL = 7 * 864e5, TTL_BOIL = 12 * 36e5, CONC = 4, WEAK_N = 20, LIST_STEP = 120;
-const TABS = [["corsi", "Corsi"], ["atomi", "Atomi"], ["grafo", "Grafo"], ["flash", "Flashcard"], ["qualita", "Qualità"]];
+const TABS = [["corsi", "Galassie"], ["atomi", "Atomi"], ["grafo", "Cosmo"], ["flash", "Flashcard"], ["qualita", "Qualità"]];
 
 /* ============ utilità ============ */
 const $ = (s) => document.querySelector(s);
@@ -960,8 +960,8 @@ function coursePicker() {
   const sel = selCorsi(), cnt = new Map(); D.atoms.forEach((a) => { if (srcOk(a)) a.corsi.forEach((c) => cnt.set(c, (cnt.get(c) || 0) + 1)); });
   const lab = !sel.size ? "Tutti" : sel.size === 1 ? (D.corsi.get([...sel][0]) || {}).nome : sel.size + " corsi";
   let lastY = null;
-  return '<details class="cpick" id="cpick"><summary><span class="k">Corsi</span><span class="v">' + esc(lab) + '</span></summary><div class="cpanel" role="group" aria-label="Corsi da mostrare">' +
-    '<label class="call"><input type="checkbox" data-pc="*"' + (!sel.size ? " checked" : "") + "><span>Tutti i corsi</span></label>" +
+  return '<details class="cpick" id="cpick"><summary><span class="k">Galassie</span><span class="v">' + esc(lab) + '</span></summary><div class="cpanel" role="group" aria-label="Galassie da mostrare">' +
+    '<label class="call"><input type="checkbox" data-pc="*"' + (!sel.size ? " checked" : "") + "><span>Tutte le galassie</span></label>" +
     D.corsiList.map((c) => { const y = c.anno == null ? "Altri" : "Anno " + c.anno, hd = y !== lastY ? '<div class="cy">' + esc(y) + "</div>" : ""; lastY = y; const n = cnt.get(c.id) || 0;
       return hd + "<label" + (n ? "" : ' class="empty"') + '><input type="checkbox" data-pc="' + c.id + '"' + (sel.has(c.id) ? " checked" : "") + "><span>" + esc(c.nome) + '</span><span class="c">' + n + "</span></label>"; }).join("") + "</div></details>";
 }
@@ -1025,7 +1025,7 @@ function coursesGrid() {
   const sel = selCorsi();
   D.corsiList.forEach((c) => { if (sel.size && !sel.has(c.id)) return; const k = c.anno == null ? "Altri" : "Anno " + c.anno; (groups.get(k) || groups.set(k, []).get(k)).push(c); });
   const totals = srcCount("*");
-  return '<div class="stack"><div><h2 class="sec">Corsi</h2><p class="note">Contenuto mostrato: ' + (S.src === "val" ? "solo atomi validati da Andrea e Omar" : S.src === "all" ? "atomi validati e nel bollitore" : "solo atomi nel bollitore") +
+  return '<div class="stack"><div><h2 class="sec">Galassie</h2><p class="note">Contenuto mostrato: ' + (S.src === "val" ? "solo atomi validati da Andrea e Omar" : S.src === "all" ? "atomi validati e nel bollitore" : "solo atomi nel bollitore") +
     ". Il selettore in alto cambia la sorgente in tutta l'app. " + totals.v + " validati, " + totals.b + " nel bollitore.</p></div>" +
     [...groups.entries()].map(([k, list]) => '<section><h3 class="yearh">' + esc(k) + '</h3><div class="cgrid">' + list.map(courseCard).join("") + "</div></section>").join("") + "</div>";
 }
@@ -1063,8 +1063,8 @@ function coursePage(c) {
     '<div class="rgroup"><h3 class="sub2">' + esc(t) + " · " + list.length + '</h3><div class="rlist">' + list.sort((a, b) => collator.compare(a.nome, b.nome)).map((r) =>
       '<div class="rrow"><span>' + esc(r.nome) + '</span><a href="' + esc(r.url) + '" target="_blank" rel="noopener">Apri in Notion</a></div>').join("") + "</div></div>").join("")
     : '<p class="note">Nessuna risorsa collegata a questo corso nel database risorse.</p>';
-  return '<div class="stack"><div class="crumb"><button class="ghost" type="button" data-act="corso" data-v="*">‹ Tutti i corsi</button><div class="btnrow">' +
-    '<button class="ghost" type="button" data-act="go" data-v="flash">Studia con le flashcard</button><button class="ghost" type="button" data-act="go" data-v="grafo">Grafo del corso</button>' +
+  return '<div class="stack"><div class="crumb"><button class="ghost" type="button" data-act="corso" data-v="*">‹ Tutte le galassie</button><div class="btnrow">' +
+    '<button class="ghost" type="button" data-act="go" data-v="flash">Studia con le flashcard</button><button class="ghost" type="button" data-act="go" data-v="grafo">Cosmo della galassia</button>' +
     '<a class="ghost" style="text-decoration:none" href="' + esc(c.url) + '" target="_blank" rel="noopener">Apri in Notion</a></div></div>' +
     '<div><h2 class="sec" style="font-size:1.8rem">' + esc(c.nome) + (c.anno != null ? ' <small class="muted" style="font-size:.9rem">· anno ' + esc(c.anno) + "</small>" : "") + "</h2>" +
     '<div class="stats"><div class="stat"><span class="k">Atomi</span><span class="v tn">' + vis.length + '</span></div><div class="stat"><span class="k">Sezioni</span><span class="v tn">' + secs.filter((s) => s.atoms.some((a) => okA(a) && a.corsi.includes(c.id))).length +
@@ -1360,7 +1360,7 @@ V.grafo = () => {
   const tools = "" +
     (cov < scope.length && !CR.running ? '<button class="ghost sm" type="button" data-act="crawl">Leggi i collegamenti (' + (scope.length - cov) + ")</button>" : "");
   return '<div class="stack">' + (tools ? '<div><div class="gtools">' + lit + tools + "</div></div>" : "") +
-    '<div class="gpair" id="gpair" role="status" hidden></div><div class="gwrap" id="gw" role="img" aria-label="Grafo dei collegamenti tra atomi"><canvas id="gc"></canvas><div class="glegend"><span><span class="glyph none"></span>validato</span><span><span class="glyph b none"></span>bollitore</span>' +
+    '<div class="gpair" id="gpair" role="status" hidden></div><div class="gwrap" id="gw" role="img" aria-label="Cosmo: il grafo dei collegamenti tra atomi"><canvas id="gc"></canvas><div class="glegend"><span><span class="glyph none"></span>validato</span><span><span class="glyph b none"></span>bollitore</span>' +
     '</div><div class="gtip" id="gtip" hidden></div><div class="gempty" id="gempty" hidden></div></div>' +
     '<p class="gcmd">' + (f ? "Sotto i prerequisiti, sopra i dipendenti · " : "") +
     "Passa sopra: anteprima · Clic: seleziona e mostra i collegamenti · Doppio clic: apre la scheda (al tocco: tocca di nuovo l'atomo) · Clic sul vuoto: deseleziona" +
@@ -1379,7 +1379,7 @@ async function initGraph() {
   /* se la vista viene ridisegnata mentre d3 carica, vale solo l'ultima inizializzazione: niente gestori doppi */
   const seq = G.initSeq = (G.initSeq || 0) + 1;
   ensureCrawl();
-  try { await loadD3(); } catch (e) { gw.innerHTML = '<div class="box" style="border:0;height:100%">' + "<h3>Grafo non disponibile</h3><p>Non riesco a caricare la libreria grafica (d3). Controlla la connessione e ricarica; la tabella nella scheda Atomi mostra gli stessi dati.</p></div>"; return; }
+  try { await loadD3(); } catch (e) { gw.innerHTML = '<div class="box" style="border:0;height:100%">' + "<h3>Cosmo non disponibile</h3><p>Non riesco a caricare la libreria grafica (d3). Controlla la connessione e ricarica; la tabella nella scheda Atomi mostra gli stessi dati.</p></div>"; return; }
   if (seq !== G.initSeq || $("#gw") !== gw || S.tab !== "grafo") return;
   const d3 = window.d3; readColors();
   G.cv = $("#gc"); G.ctx = G.cv.getContext("2d"); G.sel = null; G.lock = null; G.hover = null;
@@ -1896,7 +1896,7 @@ async function persist(c) {
 }
 /* azzeramento dei livelli: vale per i corsi scelti nel filtro in alto (nessun corso = tutti) */
 const resetScope = () => { const sel = selCorsi(); return [...D.atoms.values()].filter((a) => corsoOk(a, sel)); };
-const resetLabel = () => { const sel = selCorsi(); return !sel.size ? "tutti i corsi" : sel.size === 1 ? (D.corsi.get([...sel][0]) || {}).nome : sel.size + " corsi"; };
+const resetLabel = () => { const sel = selCorsi(); return !sel.size ? "tutte le galassie" : sel.size === 1 ? (D.corsi.get([...sel][0]) || {}).nome : sel.size + " corsi"; };
 function resetLevels() {
   const list = resetScope(), n = list.filter((a) => a.livello !== 1).length; if (!n) return;
   if (!window.confirm("Azzerare i livelli (" + resetLabel() + ")?\n" + n + (n === 1 ? " atomo torna" : " atomi tornano") + " al livello 1. L'operazione non si può annullare.")) return;
