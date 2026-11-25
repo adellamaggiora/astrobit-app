@@ -104,6 +104,7 @@ select.sel { padding:6px 10px; border:1px solid var(--rule); border-radius:6px; 
 .ghost { background:none; border:1px solid var(--rule); border-radius:6px; padding:5px 12px; }
 .ghost:hover { border-color:var(--accent); color:var(--accent); }
 .ghost.sm { padding:2px 10px; font-size:.8rem; }
+.ghost[disabled] { opacity:.45; cursor:default; border-color:var(--rule); color:inherit; }
 .solid { background:var(--accent); color:var(--accent-ink); border:0; border-radius:6px; padding:8px 16px; font-weight:600; }
 .linkbtn { background:none; border:0; padding:0; color:var(--accent); text-decoration:underline; text-underline-offset:2px; }
 nav.tabs { display:flex; gap:0; border-bottom:1px solid var(--ink); margin:6px 0 24px; overflow-x:auto; overflow-y:hidden; scrollbar-width:none; }
@@ -870,8 +871,11 @@ async function load(isRetry) {
       const atomi = await queryAll(VIEWS.atomi);
       raw = { corsi, sezioni, risorse, atomi, t: Date.now() };
     }
+    const prevT = S.raw && S.raw.t;
     S.raw = raw; buildData(raw); rebuildLinks();
     S.loadedAt = new Date(raw.t); S.status = "ready"; S.stale = false; S.session = null;
+    /* ricaricando si rilegge l'ultima esportazione: se è la stessa, lo si dice invece di non fare nulla */
+    if (STATIC && prevT && prevT === raw.t) { S.noNew = Date.now() + 8000; setTimeout(renderChrome, 8100); }
     if (!STATIC) idb.set("data", raw);
   } catch (e) {
     if (!isRetry && e && e.retryable) { await new Promise((r) => setTimeout(r, 1500 + Math.random() * 800)); return load(true); }
@@ -929,7 +933,7 @@ function renderChrome() {
   else if (S.status === "nomcp") { cls = "off"; txt = ready ? "Dati in cache (Notion non disponibile)" : "Notion non disponibile"; }
   else if (S.status === "error") { cls = "err"; txt = "Lettura non riuscita"; }
   else if (S.err) { cls = "err"; txt = "Aggiornamento non riuscito"; }
-  else if (STATIC) { const d = new Date((S.raw && S.raw.t) || Date.now()); cls = ""; txt = "Esportazione Notion del " + pad(d.getDate()) + "/" + pad(d.getMonth() + 1) + " " + pad(d.getHours()) + ":" + pad(d.getMinutes()); }
+  else if (STATIC) { const d = new Date((S.raw && S.raw.t) || Date.now()); cls = ""; txt = (S.noNew > Date.now() ? "Nessuna novità · " : "") + "Esportazione Notion del " + pad(d.getDate()) + "/" + pad(d.getMonth() + 1) + " " + pad(d.getHours()) + ":" + pad(d.getMinutes()); }
   else if (!mcp) { cls = "off"; txt = "Dati in cache"; }
   let extra = "";
   if (ready) {
@@ -1732,6 +1736,17 @@ function persistLater(c) { c.sync = "pending"; writeChain = writeChain.then(() =
 async function persist(c) {
   LV[c.id] = c.livello; store.set("lv", LV); c.sync = "saved"; renderChrome();
 }
+/* azzeramento dei livelli: vale per i corsi scelti nel filtro in alto (nessun corso = tutti) */
+const resetScope = () => { const sel = selCorsi(); return [...D.atoms.values()].filter((a) => corsoOk(a, sel)); };
+const resetLabel = () => { const sel = selCorsi(); return !sel.size ? "tutti i corsi" : sel.size === 1 ? (D.corsi.get([...sel][0]) || {}).nome : sel.size + " corsi"; };
+function resetLevels() {
+  const list = resetScope(), n = list.filter((a) => a.livello !== 1).length; if (!n) return;
+  if (!window.confirm("Azzerare i livelli (" + resetLabel() + ")?\n" + n + (n === 1 ? " atomo torna" : " atomi tornano") + " al livello 1. L'operazione non si può annullare.")) return;
+  if (!selCorsi().size) Object.keys(LV).forEach((k) => delete LV[k]); else list.forEach((a) => { delete LV[a.id]; });
+  store.set("lv", LV);
+  list.forEach((a) => { a.livello = 1; a.sync = null; });
+  afterFilter();
+}
 function backHtml(c) {
   const b = B.get(c.id);
   if (b) return (b.body ? md(linkify(b.body)) : '<p class="muted">La pagina Notion non contiene testo.</p>') + (c.tags.length ? '<div class="tags">' + c.tags.map((t) => "<span>#" + esc(t) + "</span>").join("") + "</div>" : "");
@@ -1753,7 +1768,7 @@ V.flash = () => {
 function renderFlashParts() { renderFOv(); renderStudy(); renderWeak(); }
 function renderFOv() {
   const el = $("#fov"); if (!el) return; const v = atomsIn(), d = distr(v), avg = v.length ? v.reduce((a, c) => a + c.livello, 0) / v.length : 0;
-  el.innerHTML = '<div class="bar" role="img" aria-label="Distribuzione per livello">' + [1, 2, 3, 4, 5].map((k) => d[k] ? '<i style="flex:' + d[k] + ';background:var(--lv' + k + ')"></i>' : "").join("") + '</div><div class="legend">' + [1, 2, 3, 4, 5].map((k) => '<span><b style="background:var(--lv' + k + ')"></b>Livello ' + k + " · " + d[k] + "</span>").join("") + "</div>";
+  el.innerHTML = '<div class="bar" role="img" aria-label="Distribuzione per livello">' + [1, 2, 3, 4, 5].map((k) => d[k] ? '<i style="flex:' + d[k] + ';background:var(--lv' + k + ')"></i>' : "").join("") + '</div><div class="legend">' + [1, 2, 3, 4, 5].map((k) => '<span><b style="background:var(--lv' + k + ')"></b>Livello ' + k + " · " + d[k] + "</span>").join("") + '</div><p class="note"><button class="ghost sm" type="button" data-act="resetLv"' + (resetScope().some((a) => a.livello !== 1) ? "" : " disabled") + ' title="I livelli stanno solo in questo browser">Azzera livelli · ' + esc(resetLabel()) + "</button></p>";
 }
 function renderStudy() {
   const el = $("#study"); if (!el) return;
@@ -2017,6 +2032,7 @@ document.addEventListener("click", (e) => {
     case "focus": openCard(id); break;
     case "flip": { if (e.target.closest("a")) return; const sel = window.getSelection && window.getSelection(); if (sel && !sel.isCollapsed && String(sel).trim()) return; flip(); break; }
     case "retryLoad": load(false); break;
+    case "resetLv": resetLevels(); break;
     case "retryWrites": [...D.atoms.values()].filter((a) => a.sync === "error").forEach((a) => persistLater(a)); break;
   }
 });
