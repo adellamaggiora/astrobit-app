@@ -437,7 +437,7 @@ const idb = {
 
 /* ============ stato ============ */
 let mcp = null, STATIC = false;
-/* livelli modificati fuori da Claude: restano nel browser (nessun accesso in scrittura a Notion) */
+/* livelli 1-5 delle flashcard: stanno solo nel browser (localStorage), non su Notion */
 const LV = store.get("lv", {});
 const D = { atoms: new Map(), corsi: new Map(), sezioni: new Map(), risorse: new Map(), known: new Set(), corsiList: [] };
 const B = new Map();                       // id -> { body, links:[{to,label,kind}], t }
@@ -457,7 +457,7 @@ const S = {
   corsi: new Set(store.get("corsi2", store.get("corso", "*") === "*" ? [] : [store.get("corso", "*")])),
   tipi: new Set(store.get("tipi", [])), tags: new Set(), lvl: 0, q: "", sort: ((v) => (["titolo", "tipo", "corso", "stato"].includes(v) ? v : "titolo"))(store.get("sort", "titolo")), dir: 1, group: "none", limit: LIST_STEP, aq: "",
   flashMode: ["weak", "all", "path"].includes(store.get("fmode", "weak")) ? store.get("fmode", "weak") : "weak",
-  saveLv: true, /* i livelli si salvano sempre su Notion */
+  saveLv: true, /* i livelli si salvano sempre nel browser */
   g: { labels: true, dmax: 1, /* grafo generale: si illuminano solo i vicini diretti; per le catene c'è la vista dell'atomo */ dir: "both", focus: null },
   session: null, drawer: null, hist: []
 };
@@ -691,7 +691,7 @@ function buildData(raw) {
   });
   (raw.atomi || []).forEach((r) => {
     const id = hex(r.url); if (!id) return;
-    const lv = Number(STATIC && LV[id] != null ? LV[id] : r.Livello);
+    const lv = Number(LV[id]);
     const tipo = noEmoji(r.Tipologia) || "Altro", em = emojiOf(r.Tipologia); if (em) EMO[tipo] = em;
     const a = { id, url: r.url, titolo: unesc(r.Nome) || "(senza titolo)", tipo,
       corsi: parseArr(r["📚 Corsi"]).map(hex).filter(Boolean), sezioni: parseArr(r.Sezione).map(hex).filter(Boolean), tags: parseArr(r.Tag),
@@ -1730,11 +1730,7 @@ function openCard(id) {
 }
 function persistLater(c) { c.sync = "pending"; writeChain = writeChain.then(() => persist(c)); renderChrome(); }
 async function persist(c) {
-  c.sync = "pending";
-  if (STATIC) { LV[c.id] = c.livello; store.set("lv", LV); c.sync = "saved"; renderChrome(); return; }
-  try { await mcp.callTool(SERVER, "notion-update-page", { page_id: c.url, command: "update_properties", properties: { "Livello": c.livello } }, { cache: false }); c.sync = "saved"; }
-  catch (e) { c.sync = "error"; }
-  renderChrome();
+  LV[c.id] = c.livello; store.set("lv", LV); c.sync = "saved"; renderChrome();
 }
 function backHtml(c) {
   const b = B.get(c.id);
@@ -2132,7 +2128,7 @@ renderChrome(); renderView();
   if (!mcp) STATIC = true;
   load(false);
 })();
-window.__studio = { S, D, B, L, G, CR, computeAudit, buildGraph, parseLinks, toks, labelMatches, md, linkify, orderAtoms, reportMd };
+window.__studio = { S, D, B, L, G, CR, persistLater, computeAudit, buildGraph, parseLinks, toks, labelMatches, md, linkify, orderAtoms, reportMd };
 })();
 </script>
 </body></html>

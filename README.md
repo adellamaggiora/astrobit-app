@@ -6,8 +6,10 @@ Un unico file, `index.html`, senza build.
 
 ## Come legge i dati
 
-- **Dentro Claude** (come artefatto) usa il connettore Notion, in lettura e scrittura.
-- **Fuori da Claude** (GitHub Pages o altro hosting) legge due file statici, `data/data.json` e `data/bodies.json`, generati da `scripts/export-notion.mjs`. È solo lettura: i livelli 1–5 delle flashcard si salvano nel browser (`localStorage`), non su Notion.
+- **Dentro Claude** (come artefatto) usa il connettore Notion, in sola lettura.
+- **Fuori da Claude** (GitHub Pages o altro hosting) legge due file statici, `data/data.json` e `data/bodies.json`, generati da `scripts/export-notion.mjs`.
+
+I livelli 1–5 delle flashcard si salvano sempre nel browser (`localStorage`), non su Notion: valgono per quel browser e quel dispositivo, e si perdono se cancelli i dati del sito.
 
 ## Configurazione (una volta sola)
 

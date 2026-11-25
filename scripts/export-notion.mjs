@@ -27,7 +27,7 @@ const MIN_INTERVAL = Number(process.env.MIN_INTERVAL_MS || 350);
 const SOURCES = {
   atomi: {
     id: "2a0752f1-f8bc-8115-9858-000b04b52557",
-    props: { Nome: "title", Livello: "number", Tipologia: "select", Tag: "multi", "📚 Corsi": "rel", Sezione: "rel", "Revisione Andrea": "check", "Revisione Omar": "check", "Revisione AI": "check" }
+    props: { Nome: "title", Tipologia: "select", Tag: "multi", "📚 Corsi": "rel", Sezione: "rel", "Revisione Andrea": "check", "Revisione Omar": "check", "Revisione AI": "check" }
   },
   corsi: { id: "2a0752f1-f8bc-816f-aede-000b42a6a7af", props: { Nome: "title", "Anno Accademico": "select" } },
   sezioni: { id: "f081dea5-8b95-4abe-8a69-a52857a5d9f0", props: { Nome: "title", Corso: "rel", Ordine: "number" } },
