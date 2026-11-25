@@ -384,7 +384,7 @@ const TICON = {
 };
 const tipoIco = (t) => TICON[t] || EMO[t] || "";
 /* colori per tipologia: unica fonte per grafo, pallini della tabella e filtri (pensati per il cielo scuro; nel tema chiaro si scuriscono) */
-const TCOL = { Definizione: "#f6c744", Concetto: "#ff5580", Teoria: "#5a8dff", Metodo: "#24c273" }, TCOL_ALT = "#b8bcc8";
+const TCOL = { Definizione: "#e8a23a", Concetto: "#f2527a", Teoria: "#5a8dff", Metodo: "#1fb59a" }, TCOL_ALT = "#b8bcc8";
 const tcolOf = (tipo) => TCOL[tipo] || TCOL_ALT;
 const tdot = (tipo, cls) => '<span class="tdot' + (cls ? " " + cls : "") + '" style="--tc:' + tcolOf(tipo) + '" aria-hidden="true"></span>';
 const emojiOf = (t) => (String(t || "").match(/\p{Extended_Pictographic}(?:\uFE0F|\u200D\p{Extended_Pictographic})*/u) || [""])[0];
@@ -1755,12 +1755,13 @@ function drawNow() {
   }
   /* ogni stella: filo del colore del fondo (la stacca dalle vicine), disco pieno e orlo chiaro */
   const kl = 1.3 / k;
+  const nz = Math.min(1, 0.55 + 0.45 * Math.min(1, k)); /* da lontano i nodi si attenuano un poco (non l'alone), così la massa non si fonde in una macchia */
   /* colore = tipologia; stato = segno: validato disco pieno con orlo netto e punto luminoso, bollitore più tenue con orlo tratteggiato */
   dots.forEach((arr, key) => {
     const [v, a, tp] = key.split("|"), tc = shadeT(tcolOf(tp)), val = true; /* nel grafo validato e bollitore non si distinguono: lo stato si legge nel filtro e nella scheda */ ctx.globalAlpha = +a;
     ctx.beginPath(); for (const n of arr) { ctx.moveTo(n.x + n.rw + kl, n.y); ctx.arc(n.x, n.y, n.rw + kl, 0, 2 * Math.PI); } ctx.fillStyle = col.surf; ctx.fill();
     ctx.beginPath(); for (const n of arr) { ctx.moveTo(n.x + n.rw, n.y); ctx.arc(n.x, n.y, n.rw, 0, 2 * Math.PI); }
-    ctx.fillStyle = tc; ctx.globalAlpha = +a * (val ? 1 : 0.5); ctx.fill(); ctx.globalAlpha = +a;
+    ctx.fillStyle = tc; ctx.globalAlpha = +a * nz * (val ? 1 : 0.5); ctx.fill(); ctx.globalAlpha = +a * nz;
     ctx.beginPath(); for (const n of arr) { if (n.rw * k < 2.5) continue; const r = n.rw - 0.6 / k; ctx.moveTo(n.x + r, n.y); ctx.arc(n.x, n.y, r, 0, 2 * Math.PI); }
     ctx.strokeStyle = tc; ctx.lineWidth = (val ? 1.1 : 0.9) / k; if (!val) ctx.setLineDash([2.2 / k, 1.8 / k]); ctx.stroke(); ctx.setLineDash([]);
       });
