@@ -129,11 +129,12 @@ nav.tabs .badge { background:var(--bad); color:#fff; border-radius:999px; font-s
 .dots i { width:8px; height:8px; border-radius:50%; border:1px solid var(--accent); }
 .dots i.on { background:var(--accent); }
 /* icona atomo: emoji della tipologia (come su Notion) su un cerchio; il colore del cerchio dice se è validato */
-.glyph { display:inline-flex; align-items:center; justify-content:center; width:20px; height:20px; margin-right:7px; vertical-align:-4px; border-radius:50%; flex:none;
-  font-size:11px; line-height:1; font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;
+.glyph { display:inline-flex; align-items:center; justify-content:center; width:20px; height:20px; margin-right:7px; vertical-align:middle; position:relative; top:-2px; border-radius:50%; flex:none;
+  font-size:11px; line-height:1; color:var(--ink); font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;
   background:color-mix(in srgb, var(--s1) 20%, var(--surface)); box-shadow:inset 0 0 0 1.5px var(--s1); }
 .glyph.b { background:color-mix(in srgb, var(--s2) 20%, var(--surface)); box-shadow:inset 0 0 0 1.5px var(--s2); }
 .glyph.none { font-size:0; }
+.glyph svg { display:block; }
 .note { font-size:.8rem; color:var(--muted); margin:0; }
 
 /* layout with rail */
@@ -377,6 +378,15 @@ const SERVER = "Notion";
 const TIPI = ["Definizione", "Concetto", "Teoria", "Metodo"];
 /* emoji delle opzioni «Tipologia» su Notion; aggiornate dai dati letti */
 const EMO = { Definizione: "💡", Concetto: "🧠", Teoria: "📘", Metodo: "🧩" };
+/* icone dell'app (Notion resta con le sue emoji): segni astronomici a tratto sottile, uno per tipologia */
+const SV = (b) => '<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + b + "</svg>";
+const TICON = {
+  Definizione: SV('<circle cx="8" cy="8" r="5.3"/><circle cx="8" cy="8" r="1.3" fill="currentColor" stroke="none"/>'), /* il Sole: un punto fissato */
+  Concetto: SV('<ellipse cx="8" cy="8" rx="6.3" ry="2.7" transform="rotate(-35 8 8)"/><circle cx="8" cy="8" r="1.3" fill="currentColor" stroke="none"/>'), /* un'orbita attorno a un centro */
+  Teoria: SV('<circle cx="8" cy="8" r="3.1"/><ellipse cx="8" cy="8" rx="6.6" ry="1.9" transform="rotate(-22 8 8)"/>'), /* un pianeta con il suo anello */
+  Metodo: SV('<path d="M2.8 11.6 6 6.6l4 3.2 3.2-5.2"/><g fill="currentColor" stroke="none"><circle cx="2.8" cy="11.6" r="1.2"/><circle cx="6" cy="6.6" r="1.2"/><circle cx="10" cy="9.8" r="1.2"/><circle cx="13.2" cy="4.6" r="1.2"/></g>') /* una costellazione: passi in sequenza */
+};
+const tipoIco = (t) => TICON[t] || EMO[t] || "";
 const emojiOf = (t) => (String(t || "").match(/\p{Extended_Pictographic}(?:\uFE0F|\u200D\p{Extended_Pictographic})*/u) || [""])[0];
 const TTL = 7 * 864e5, TTL_BOIL = 12 * 36e5, CONC = 4, WEAK_N = 20, LIST_STEP = 120;
 const TABS = [["corsi", "Corsi"], ["atomi", "Atomi"], ["grafo", "Grafo"], ["flash", "Flashcard"], ["qualita", "Qualità"]];
@@ -891,7 +901,7 @@ async function load(isRetry) {
 const dots = (n) => '<span class="dots" role="img" aria-label="Livello ' + n + ' di 5">' + [1, 2, 3, 4, 5].map((k) => '<i class="' + (k <= n ? "on" : "") + '"></i>').join("") + "</span>";
 const distr = (list) => { const d = [0, 0, 0, 0, 0, 0]; list.forEach((c) => d[c.livello]++); return d; };
 const miniBar = (list) => { const d = distr(list); return '<div class="mini" aria-hidden="true">' + [1, 2, 3, 4, 5].map((k) => d[k] ? '<i style="flex:' + d[k] + ';background:var(--lv' + k + ')"></i>' : "").join("") + "</div>"; };
-const tglyph = (tipo, valid, extra) => { const e = EMO[tipo] || ""; return '<span class="glyph' + (valid ? "" : " b") + (e ? "" : " none") + '" title="' + esc(tipo) + (valid ? "" : " · nel bollitore") + '"' + (extra || "") + ' aria-hidden="true">' + e + "</span>"; };
+const tglyph = (tipo, valid, extra) => { const e = tipoIco(tipo); return '<span class="glyph' + (valid ? "" : " b") + (e ? "" : " none") + '" title="' + esc(tipo) + (valid ? "" : " · nel bollitore") + '"' + (extra || "") + ' aria-hidden="true">' + e + "</span>"; };
 const glyph = (a) => tglyph(a.tipo, a.valid);
 const corsiNames = (a) => a.corsi.map((id) => (D.corsi.get(id) || {}).nome).filter(Boolean);
 const sezNames = (a) => a.sezioni.map((id) => (D.sezioni.get(id) || {}).nome).filter(Boolean);
@@ -961,7 +971,7 @@ function tipoPicker() {
   const lab = !sel.size ? "Tutte" : sel.size === 1 ? [...sel][0] : sel.size + " tipologie";
   return '<details class="cpick" id="tpick"><summary><span class="k">Tipologia</span><span class="v">' + esc(lab) + '</span></summary><div class="cpanel" role="group" aria-label="Tipologie da mostrare">' +
     '<label class="call"><input type="checkbox" data-pt="*"' + (!sel.size ? " checked" : "") + "><span>Tutte le tipologie</span></label>" +
-    tipi.map((t) => '<label><input type="checkbox" data-pt="' + esc(t) + '"' + (sel.has(t) ? " checked" : "") + '><span class="lemo">' + (EMO[t] || "") + "</span><span>" + esc(t) + '</span><span class="c">' + tc.get(t) + "</span></label>").join("") + "</div></details>";
+    tipi.map((t) => '<label><input type="checkbox" data-pt="' + esc(t) + '"' + (sel.has(t) ? " checked" : "") + '><span class="lemo">' + tipoIco(t) + "</span><span>" + esc(t) + '</span><span class="c">' + tc.get(t) + "</span></label>").join("") + "</div></details>";
 }
 /* riga dei filtri attivi, sempre visibile quando qualcosa restringe la vista */
 function renderFline() {
@@ -1704,7 +1714,7 @@ function drawNow() {
   /* scarica: quando cambia l'atomo attivo, la luce si espande lungo i fili dal nodo verso i collegati, un salto dopo l'altro */
   const zk = tid || (PM && G.pair.a ? G.pair.a + "|" + (G.pair.b || "") : null);
   if (zk !== G.zapId) { G.zapId = zk; G.zapT = zk ? performance.now() : 0; }
-  const HOP = 240, STEP = 170, calm = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const HOP = 150, STEP = 105, calm = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
   const zel = zk && !calm ? performance.now() - G.zapT : 1e9; let zbusy = false;
   const part = (e, d) => {
     if (zel >= 1e9) return [e.source.x, e.source.y, e.target.x, e.target.y, 1, 1];
