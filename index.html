@@ -75,9 +75,9 @@ h3.sub2 { font:600 .72rem/1 var(--sans); text-transform:uppercase; letter-spacin
 .gempty[hidden] { display:none; } .gempty h3 { font:italic 400 1.4rem var(--serif); margin:0; } .gempty p { margin:0; color:var(--muted); max-width:44ch; }
 .fline { display:flex; flex-wrap:wrap; gap:6px 8px; align-items:center; font-size:.85rem; color:var(--muted); }
 .fline[hidden] { display:none; }
-.fchip { display:inline-flex; align-items:center; gap:6px; padding:2px 4px 2px 10px; border-radius:999px; background:var(--accent-soft); color:var(--ink); border:0; font:inherit; }
-.fchip b { font-weight:500; } .fchip span { display:inline-flex; width:22px; height:22px; align-items:center; justify-content:center; border-radius:50%; color:var(--muted); }
-.fchip:hover span { background:var(--surface); color:var(--ink); }
+.fchip { display:inline-flex; align-items:center; gap:6px; padding:2px 4px 2px 10px; border-radius:999px; background:color-mix(in srgb, var(--accent) 20%, var(--paper)); color:var(--ink); border:1px solid color-mix(in srgb, var(--accent) 65%, transparent); font:inherit; }
+.fchip b { font-weight:600; color:var(--accent); } .fchip span { display:inline-flex; width:22px; height:22px; align-items:center; justify-content:center; border-radius:50%; color:var(--accent); }
+.fchip:hover { border-color:var(--accent); } .fchip:hover span { background:var(--accent); color:var(--accent-ink); }
 .gctl { display:inline-flex; align-items:center; gap:6px; } .gctl select.sel { padding:5px 8px; min-height:34px; }
 .sub { margin:4px 0 0; color:var(--muted); font-size:.85rem; }
 .tools { display:flex; flex-wrap:wrap; gap:8px 12px; align-items:center; font-size:.875rem; }
@@ -301,6 +301,8 @@ mjx-assistive-mml { position:absolute !important; top:0; left:0; clip:rect(1px,1
 .cpick > summary::after { content:"▾"; color:var(--muted); font-size:.8em; }
 .cpick > summary .k { color:var(--muted); font-size:.85em; } .cpick > summary .v { font-weight:500; max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .cpick[open] > summary { border-color:var(--accent); }
+.cpick > summary.on { border-color:color-mix(in srgb, var(--accent) 65%, transparent); background:color-mix(in srgb, var(--accent) 20%, var(--paper)); }
+.cpick > summary.on .v { color:var(--accent); font-weight:600; }
 .cpanel { position:absolute; z-index:20; top:calc(100% + 6px); left:0; width:min(320px, calc(100vw - 32px)); max-height:min(60vh,440px); overflow:auto; background:var(--surface); border:1px solid var(--rule); border-radius:8px; padding:6px; box-shadow:0 10px 30px rgba(0,0,0,.18); }
 .cpanel label { display:flex; align-items:center; gap:10px; padding:8px 8px; border-radius:6px; cursor:pointer; min-height:40px; }
 .cpanel label:hover { background:var(--accent-soft); }
@@ -955,7 +957,7 @@ function coursePicker() {
   const sel = selCorsi(), cnt = new Map(); D.atoms.forEach((a) => { if (srcOk(a)) a.corsi.forEach((c) => cnt.set(c, (cnt.get(c) || 0) + 1)); });
   const lab = !sel.size ? "Tutti" : sel.size === 1 ? (D.corsi.get([...sel][0]) || {}).nome : sel.size + " galassie";
   let lastY = null;
-  return '<details class="cpick" id="cpick"><summary><span class="k">Galassie</span><span class="v">' + esc(lab) + '</span></summary><div class="cpanel" role="group" aria-label="Galassie da mostrare">' +
+  return '<details class="cpick" id="cpick"><summary' + (sel.size ? ' class="on"' : "") + '><span class="k">Galassie</span><span class="v">' + esc(lab) + '</span></summary><div class="cpanel" role="group" aria-label="Galassie da mostrare">' +
     '<label class="call"><input type="checkbox" data-pc="*"' + (!sel.size ? " checked" : "") + "><span>Tutte le galassie</span></label>" +
     D.corsiList.map((c) => { const y = c.anno == null ? "Altri" : "Anno " + c.anno, hd = y !== lastY ? '<div class="cy">' + esc(y) + "</div>" : ""; lastY = y; const n = cnt.get(c.id) || 0;
       return hd + "<label" + (n ? "" : ' class="empty"') + '><input type="checkbox" data-pc="' + c.id + '"' + (sel.has(c.id) ? " checked" : "") + "><span>" + esc(c.nome) + '</span><span class="c">' + n + "</span></label>"; }).join("") + "</div></details>";
@@ -964,7 +966,7 @@ function tipoPicker() {
   const tc = new Map(); D.atoms.forEach((a) => { if (srcOk(a)) tc.set(a.tipo, (tc.get(a.tipo) || 0) + 1); });
   const tipi = [...new Set([...TIPI, ...tc.keys()])].filter((t) => tc.has(t)), sel = S.tipi;
   const lab = !sel.size ? "Tutte" : sel.size === 1 ? [...sel][0] : sel.size + " tipologie";
-  return '<details class="cpick" id="tpick"><summary><span class="k">Tipologia</span><span class="v">' + esc(lab) + '</span></summary><div class="cpanel" role="group" aria-label="Tipologie da mostrare">' +
+  return '<details class="cpick" id="tpick"><summary' + (sel.size ? ' class="on"' : "") + '><span class="k">Tipologia</span><span class="v">' + esc(lab) + '</span></summary><div class="cpanel" role="group" aria-label="Tipologie da mostrare">' +
     '<label class="call"><input type="checkbox" data-pt="*"' + (!sel.size ? " checked" : "") + "><span>Tutte le tipologie</span></label>" +
     tipi.map((t) => '<label><input type="checkbox" data-pt="' + esc(t) + '"' + (sel.has(t) ? " checked" : "") + '><span class="lemo">' + tdot(t) + "</span><span>" + esc(t) + '</span><span class="c">' + tc.get(t) + "</span></label>").join("") + "</div></details>";
 }
@@ -1138,13 +1140,13 @@ function renderDrawer(keepScroll) {
     (outOther.length ? "<h4>Puntano fuori dal database atomi</h4><ul>" + outOther.map((l) => '<li><a class="ilink bad" href="https://www.notion.so/' + l.to + '" target="_blank" rel="noopener">' + esc(l.label || l.to) + "</a></li>").join("") + "</ul>" : "") + "</div>"
     : (B.has(a.id) ? '<p class="note">Nessun collegamento ad altre stelle in questa pagina, e nessuna stella la cita.</p>' : "");
   el.hidden = false; sc.hidden = false;
-  el.innerHTML = '<div class="dh"><div class="btnrow">' + (S.hist.length ? '<button class="ghost sm" type="button" data-act="back">‹ Indietro</button>' : "") + '</div><button class="ghost sm" type="button" data-act="closeDrawer" aria-label="Chiudi">Chiudi ✕</button></div>' +
+  el.innerHTML = '<div class="dh"><div class="btnrow">' + (S.hist.length ? '<button class="ghost sm" type="button" data-act="back">‹ Indietro</button>' : "") + '<button class="ghost sm" type="button" data-act="toGraph" data-id="' + a.id + '">Mostra nell\'universo</button></div><button class="ghost sm" type="button" data-act="closeDrawer" aria-label="Chiudi">Chiudi ✕</button></div>' +
     '<div class="db"><div class="dmeta"><span class="tag">' + esc(a.tipo) + "</span>" + (a.valid ? '<span class="tag ok">Validato</span>' : '<span class="tag warn">Bollitore</span>' + (a.andrea ? ' <span class="tag">Andrea ok</span>' : "") + (a.omar ? ' <span class="tag">Omar ok</span>' : "")) + (a.ai ? '<span class="tag">Revisione AI</span>' : "") + dots(a.livello) + "</div>" +
     '<h2 class="dt">' + titleHtml(a.titolo) + "</h2>" +
     '<div class="dmeta"><span>' + (corsiNames(a).map(esc).join(", ") || "Senza galassia") + "</span>" + (sezNames(a).length ? "<span>· " + sezNames(a).map(esc).join(", ") + "</span>" : "") + "</div>" +
     '<div class="back" id="dbody">' + bodyHtml + "</div>" +
     (a.tags.length ? '<div class="tags">' + a.tags.map((t) => '<button type="button" data-act="tagGo" data-v="' + esc(t) + '">#' + esc(t) + "</button>").join("") + "</div>" : "") + links +
-    '<div class="dacts"><button class="ghost" type="button" data-act="toGraph" data-id="' + a.id + '">Mostra nell\'universo</button><a class="ghost" style="text-decoration:none" href="' + esc(a.url) + '" target="_blank" rel="noopener">Apri in Notion</a></div></div>';
+    '<div class="dacts"><a class="ghost" style="text-decoration:none" href="' + esc(a.url) + '" target="_blank" rel="noopener">Apri in Notion</a></div></div>';
   if (keepScroll && st) el.querySelector(".db").scrollTop = st;
   typeset(el);
 }
