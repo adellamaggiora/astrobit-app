@@ -461,7 +461,7 @@ const CR = { running: false, done: 0, total: 0, err: null, stop: false, failed: 
 const S = {
   status: "loading", err: null, stale: false, loadedAt: null, raw: null,
   tab: store.get("tab", "corsi"),
-  src: ["val", "all", "boil"].includes(store.get("src", "val")) ? store.get("src", "val") : "val",
+  src: ["val", "all", "boil"].includes(store.get("fonte", "all")) ? store.get("fonte", "all") : "all", /* predefinito: validati e bollitore; chiave nuova perché il vecchio "src" salvato non blocchi il nuovo default */
   corsi: new Set(store.get("corsi2", store.get("corso", "*") === "*" ? [] : [store.get("corso", "*")])),
   tipi: new Set(store.get("tipi", [])), tags: new Set(), lvl: 0, q: "", sort: ((v) => (["titolo", "tipo", "corso", "stato"].includes(v) ? v : "titolo"))(store.get("sort", "titolo")), dir: 1, group: "none", limit: LIST_STEP, aq: "",
   flashMode: ["weak", "all", "path"].includes(store.get("fmode", "weak")) ? store.get("fmode", "weak") : "weak",
@@ -2129,7 +2129,7 @@ document.addEventListener("click", (e) => {
   switch (act) {
     case "tab": setTab(v); break;
     case "go": setTab(v); break;
-    case "src": S.src = v; store.set("src", v); if (S.g.focus && !srcOk(D.atoms.get(S.g.focus) || {})) S.g.focus = null; afterFilter(); renderDrawer(); break;
+    case "src": S.src = v; store.set("fonte", v); if (S.g.focus && !srcOk(D.atoms.get(S.g.focus) || {})) S.g.focus = null; afterFilter(); renderDrawer(); break;
     case "corso": S.corsi = v === "*" ? new Set() : new Set([v]); S.g.focus = null; onFilterChange(); window.scrollTo(0, 0); break;
     case "clrF": if (v === "corsi" || v === "all") S.corsi = new Set(); if (v === "tipi" || v === "all") S.tipi = new Set(); if (v === "aq" || v === "all") { S.aq = ""; $("#q").value = ""; } onFilterChange(); break;
     case "atom": openAtom(id); break;
@@ -2179,7 +2179,7 @@ document.addEventListener("change", (e) => {
     onFilterChange("cpick"); return;
   }
   if (t.dataset && t.dataset.ps) {
-    S.src = t.dataset.ps; store.set("src", S.src); if (S.g.focus && !srcOk(D.atoms.get(S.g.focus) || {})) S.g.focus = null;
+    S.src = t.dataset.ps; store.set("fonte", S.src); if (S.g.focus && !srcOk(D.atoms.get(S.g.focus) || {})) S.g.focus = null;
     const d = $("#spick"); if (d) d.open = false; onFilterChange(); renderDrawer(); return;
   }
   if (t.dataset && t.dataset.pt) {
